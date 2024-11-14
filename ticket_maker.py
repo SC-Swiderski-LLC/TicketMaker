@@ -91,7 +91,7 @@ priority_dropdown.grid(row=3, column=1, padx=10, pady=10, sticky='ew')
 # Create and place the status label and dropdown
 label_status = tk.Label(root, text="Status")
 label_status.grid(row=4, column=0, padx=10, pady=10, sticky='w')
-status_var = tk.StringVar()
+status_var = tk.StringVar(value="Open") # Modified code to default to "Open" status
 status_dropdown = tk.OptionMenu(root, status_var, "Open", "Pending", "Resolved", "Closed")
 status_dropdown.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
 
