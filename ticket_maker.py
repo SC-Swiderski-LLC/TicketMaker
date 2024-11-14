@@ -45,6 +45,10 @@ def clear_fields():
     status_var.set("")
     type_var.set("")
 
+def create_and_clear():
+    create_ticket()
+    clear_fields()
+
 # Create the main window
 root = tk.Tk()
 root.title("Freshdesk Ticket Creator")
@@ -103,7 +107,7 @@ button_clear = tk.Button(root, text="Clear Fields", command=clear_fields)
 button_clear.grid(row=6, column=0, padx=10, pady=20, sticky='ew')
 
 # Create and place the submit button
-button_submit = tk.Button(root, text="Create Ticket", command=create_ticket)
+button_submit = tk.Button(root, text="Create Ticket", command=create_and_clear)
 button_submit.grid(row=6, column=1, padx=10, pady=20, sticky='ew')
 
 # Run the application
