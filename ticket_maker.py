@@ -4,7 +4,7 @@ import requests
 
 def create_ticket():
     subject = entry_subject.get()
-    description = text_description.get()
+    description = text_description.get("1.0", tk.END).strip()  # Fixed here
     email = entry_email.get()
     priority = priority_var.get()
     status = status_var.get()
@@ -34,6 +34,8 @@ def create_ticket():
         messagebox.showinfo("Ticket Created", f"Ticket with subject '{subject}' created successfully!")
     else:
         messagebox.showerror("Error", f"Failed to create ticket: {response.status_code} {response.text}")
+
+
 
 def clear_fields():
     entry_subject.delete(0, tk.END)
