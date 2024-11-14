@@ -8,9 +8,10 @@ def create_ticket():
     email = entry_email.get()
     priority = priority_var.get()
     status = status_var.get()
+    ticket_type = type_var.get()
 
     # Check if any field is empty
-    if not subject or not description or not email or not priority or not status:
+    if not subject or not description or not email or not priority or not status or not ticket_type:
         messagebox.showerror("Error", "All fields are required.")
         return
 
@@ -27,7 +28,8 @@ def create_ticket():
         "description": description,
         "email": email,
         "priority": priority_mapping[priority],
-        "status": status_mapping[status]
+        "status": status_mapping[status],
+        "type": ticket_type
     }
     response = requests.post(url, headers=headers, json=data, auth=("your_api_key", "X"))
     if response.status_code == 201:
@@ -35,14 +37,13 @@ def create_ticket():
     else:
         messagebox.showerror("Error", f"Failed to create ticket: {response.status_code} {response.text}")
 
-
-
 def clear_fields():
     entry_subject.delete(0, tk.END)
     text_description.delete("1.0", tk.END)
     entry_email.delete(0, tk.END)
     priority_var.set("")
     status_var.set("")
+    type_var.set("")
 
 # Create the main window
 root = tk.Tk()
@@ -90,13 +91,20 @@ status_var = tk.StringVar()
 status_dropdown = tk.OptionMenu(root, status_var, "Open", "Pending", "Resolved", "Closed")
 status_dropdown.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
 
+# Create and place the type label and dropdown
+label_type = tk.Label(root, text="Type")
+label_type.grid(row=5, column=0, padx=10, pady=10, sticky='w')
+type_var = tk.StringVar()
+type_dropdown = tk.OptionMenu(root, type_var, "Alert", "EDR", "Problem", "Task", "Other")
+type_dropdown.grid(row=5, column=1, padx=10, pady=10, sticky='ew')
+
 # Create and place the clear button
 button_clear = tk.Button(root, text="Clear Fields", command=clear_fields)
-button_clear.grid(row=5, column=0, padx=10, pady=20, sticky='ew')
+button_clear.grid(row=6, column=0, padx=10, pady=20, sticky='ew')
 
 # Create and place the submit button
 button_submit = tk.Button(root, text="Create Ticket", command=create_ticket)
-button_submit.grid(row=5, column=1, padx=10, pady=20, sticky='ew')
+button_submit.grid(row=6, column=1, padx=10, pady=20, sticky='ew')
 
 # Run the application
 root.mainloop()
