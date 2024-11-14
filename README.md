@@ -1,4 +1,6 @@
-# Ticketmaker - Freshdesk Ticket Creator
+# Freshdesk Ticket Creator
+
+![Application Screenshot](screenshot.png)
 
 ## Overview
 
