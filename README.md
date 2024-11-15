@@ -23,7 +23,6 @@ The **Freshdesk Ticket Creator** is a Python application with a graphical user i
    - **Email**: Contact email of the person reporting the issue.
    - **Priority**: Dropdown to select ticket priority (Low, Medium, High, Urgent).
    - **Status**: Dropdown to select ticket status (Open, Pending, Resolved, Closed).
-   - **Type**: Dropdown to select ticket type (Alert, EDR, Problem, Task, Other).
 
 2. On clicking "Create Ticket":
    - Validates that all fields are filled.
