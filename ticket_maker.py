@@ -19,7 +19,7 @@ def create_ticket():
     priority_mapping = {"Low": 1, "Medium": 2, "High": 3, "Urgent": 4}
     status_mapping = {"Open": 2, "Pending": 3, "Resolved": 4, "Closed": 5}
 
-    url = "https://yourdomain.freshdesk.com/api/v2/tickets"
+    url = "https://yourdomain.freshdesk.com/api/v2/tickets" # Change this to your organization's URL
     headers = {
         "Content-Type": "application/json"
     }
@@ -31,7 +31,7 @@ def create_ticket():
         "status": status_mapping[status],
         "type": ticket_type
     }
-    response = requests.post(url, headers=headers, json=data, auth=("your_api_key", "X"))
+    response = requests.post(url, headers=headers, json=data, auth=("your_api_key", "X")) # Enter your API key
     if response.status_code == 201:
         messagebox.showinfo("Ticket Created", f"Ticket with subject '{subject}' created successfully!")
     else:
