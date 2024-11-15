@@ -50,7 +50,7 @@ The **Freshdesk Ticket Creator** is a Python application with a graphical user i
    ```
 
 3. **Configure API Settings**:
-   - Open the script file (`ticket_creator.py`).
+   - Open the config file (`config.json`).
    - Replace `yourdomain.freshdesk.com` with your Freshdesk domain.
    - Replace `your_api_key` with your Freshdesk API key.
 

@@ -1,6 +1,20 @@
 import tkinter as tk
 from tkinter import messagebox
 import requests
+import json
+import os
+
+# Load the config file
+config_path = "config.json"
+
+if os.path.exists(config_path):
+    with open(config_path, "r") as config_file:
+        config = json.load(config_file)
+        url = config.get("url")
+        api_key = config.get("api_key")
+else:
+    messagebox.showerror("Error", "Configuration file not found. Please set up the app correctly.")
+    exit()
 
 def create_ticket():
     subject = entry_subject.get()
@@ -19,7 +33,7 @@ def create_ticket():
     priority_mapping = {"Low": 1, "Medium": 2, "High": 3, "Urgent": 4}
     status_mapping = {"Open": 2, "Pending": 3, "Resolved": 4, "Closed": 5}
 
-    url = "https://yourdomain.freshdesk.com/api/v2/tickets" # Change this to your organization's URL
+    url # Updated to use config file variable
     headers = {
         "Content-Type": "application/json"
     }
@@ -31,7 +45,7 @@ def create_ticket():
         "status": status_mapping[status],
         "type": ticket_type
     }
-    response = requests.post(url, headers=headers, json=data, auth=("your_api_key", "X")) # Enter your API key
+    response = requests.post(url, headers=headers, json=data, auth=(api_key, "X")) # Updated to use config file variable
     if response.status_code == 201:
         messagebox.showinfo("Ticket Created", f"Ticket with subject '{subject}' created successfully!")
     else:
