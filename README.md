@@ -39,8 +39,8 @@ The **Freshdesk Ticket Creator** is a Python application with a graphical user i
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/freshdesk-ticket-creator.git
-   cd freshdesk-ticket-creator
+   git clone https://github.com/sargeschultz11/Ticketmaker
+   cd Ticketmaker
    ```
 
 2. **Install Dependencies**:
