@@ -1,6 +1,6 @@
 # Ticketmaker - Freshdesk Ticket Creator
 
-![Application Screenshot](screenshot.png)
+![Application Screenshot](images/2024-11-15 06_32_21.png)
 
 ## Overview
 
