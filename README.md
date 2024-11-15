@@ -31,6 +31,8 @@ The **Freshdesk Ticket Creator** is a Python application with a graphical user i
    - Submits the ticket details to the Freshdesk API.
    - Displays a success or error message based on the API response.
 
+   ![Success Message](images/successmessage.png)
+
 3. After submission, fields are cleared for the next entry.
 
 ## Installation
