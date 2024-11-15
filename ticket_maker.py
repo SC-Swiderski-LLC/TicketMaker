@@ -22,10 +22,9 @@ def create_ticket():
     email = entry_email.get()
     priority = priority_var.get()
     status = status_var.get()
-    ticket_type = type_var.get()
 
     # Check if any field is empty
-    if not subject or not description or not email or not priority or not status or not ticket_type:
+    if not subject or not description or not email or not priority or not status:
         messagebox.showerror("Error", "All fields are required.")
         return
 
@@ -42,8 +41,7 @@ def create_ticket():
         "description": description,
         "email": email,
         "priority": priority_mapping[priority],
-        "status": status_mapping[status],
-        "type": ticket_type
+        "status": status_mapping[status]
     }
     response = requests.post(url, headers=headers, json=data, auth=(api_key, "X")) # Updated to use config file variable
     if response.status_code == 201:
@@ -57,7 +55,6 @@ def clear_fields():
     entry_email.delete(0, tk.END)
     priority_var.set("")
     status_var.set("")
-    type_var.set("")
 
 def create_and_clear():
     create_ticket()
@@ -98,7 +95,7 @@ entry_email.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
 # Create and place the priority label and dropdown
 label_priority = tk.Label(root, text="Priority")
 label_priority.grid(row=3, column=0, padx=10, pady=10, sticky='w')
-priority_var = tk.StringVar()
+priority_var = tk.StringVar(value="Low") # Default to "Low"
 priority_dropdown = tk.OptionMenu(root, priority_var, "Low", "Medium", "High", "Urgent")
 priority_dropdown.grid(row=3, column=1, padx=10, pady=10, sticky='ew')
 
@@ -109,20 +106,13 @@ status_var = tk.StringVar(value="Open") # Modified code to default to "Open" sta
 status_dropdown = tk.OptionMenu(root, status_var, "Open", "Pending", "Resolved", "Closed")
 status_dropdown.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
 
-# Create and place the type label and dropdown
-label_type = tk.Label(root, text="Type")
-label_type.grid(row=5, column=0, padx=10, pady=10, sticky='w')
-type_var = tk.StringVar()
-type_dropdown = tk.OptionMenu(root, type_var, "Alert", "EDR", "Problem", "Task", "Other")
-type_dropdown.grid(row=5, column=1, padx=10, pady=10, sticky='ew')
-
 # Create and place the clear button
 button_clear = tk.Button(root, text="Clear Fields", command=clear_fields)
-button_clear.grid(row=6, column=0, padx=10, pady=20, sticky='ew')
+button_clear.grid(row=5, column=0, padx=10, pady=20, sticky='ew')
 
 # Create and place the submit button
 button_submit = tk.Button(root, text="Create Ticket", command=create_and_clear)
-button_submit.grid(row=6, column=1, padx=10, pady=20, sticky='ew')
+button_submit.grid(row=5, column=1, padx=10, pady=20, sticky='ew')
 
 # Run the application
 root.mainloop()
