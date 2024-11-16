@@ -64,6 +64,8 @@ def create_and_clear():
 root = tk.Tk()
 root.title("TicketMaker Lite")
 root.geometry("600x400") # This sets the initial size of the window
+root.iconbitmap("assets/icon.ico")  # Replace with the actual path to your icon file
+
 
 # Configure the grid to expand with the window size
 root.grid_rowconfigure(1, weight=1)

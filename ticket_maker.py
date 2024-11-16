@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl
+from PyQt5.QtGui import QIcon
 import requests
 import base64
 import re
@@ -27,6 +28,7 @@ class TicketCreator(QMainWindow):
         super().__init__()
         self.setWindowTitle("TicketMaker")
         self.setGeometry(100, 100, 800, 850)
+        self.setWindowIcon(QIcon("assets/icon.ico"))  # Replace with the actual path to your icon file
 
         # Main widget and layout
         central_widget = QWidget()
