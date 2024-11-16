@@ -62,7 +62,7 @@ def create_and_clear():
 
 # Create the main window
 root = tk.Tk()
-root.title("Freshdesk Ticket Creator")
+root.title("TicketMaker Lite")
 root.geometry("600x400") # This sets the initial size of the window
 
 # Configure the grid to expand with the window size
