@@ -1,118 +1,203 @@
-import tkinter as tk
-from tkinter import messagebox
-import requests
-import json
+import sys
 import os
+import json
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QComboBox,
+    QPushButton, QWidget, QMessageBox, QFileDialog
+)
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtCore import QUrl
+import requests
+import base64
+import re
 
-# Load the config file
+# Load config file
 config_path = "config.json"
-
 if os.path.exists(config_path):
     with open(config_path, "r") as config_file:
         config = json.load(config_file)
         url = config.get("url")
         api_key = config.get("api_key")
 else:
-    messagebox.showerror("Error", "Configuration file not found. Please set up the app correctly.")
-    exit()
+    print("Configuration file not found.")
+    sys.exit(1)
 
-def create_ticket():
-    subject = entry_subject.get()
-    description = text_description.get("1.0", tk.END).strip()  # Fixed here
-    email = entry_email.get()
-    priority = priority_var.get()
-    status = status_var.get()
+class TicketCreator(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("TicketMaker")
+        self.setGeometry(100, 100, 800, 850)
 
-    # Check if any field is empty
-    if not subject or not description or not email or not priority or not status:
-        messagebox.showerror("Error", "All fields are required.")
-        return
+        # Main widget and layout
+        central_widget = QWidget()
+        layout = QVBoxLayout()
 
-    # Map dropdown values to API values
-    priority_mapping = {"Low": 1, "Medium": 2, "High": 3, "Urgent": 4}
-    status_mapping = {"Open": 2, "Pending": 3, "Resolved": 4, "Closed": 5}
+        # Subject
+        self.subject_label = QLabel("Subject:")
+        self.subject_input = QLineEdit()
+        self.subject_input.setPlaceholderText("Enter the ticket subject here")
+        layout.addWidget(self.subject_label)
+        layout.addWidget(self.subject_input)
 
-    url # Updated to use config file variable
-    headers = {
-        "Content-Type": "application/json"
-    }
-    data = {
-        "subject": subject,
-        "description": description,
-        "email": email,
-        "priority": priority_mapping[priority],
-        "status": status_mapping[status]
-    }
-    response = requests.post(url, headers=headers, json=data, auth=(api_key, "X")) # Updated to use config file variable
-    if response.status_code == 201:
-        messagebox.showinfo("Ticket Created", f"Ticket with subject '{subject}' created successfully!")
-    else:
-        messagebox.showerror("Error", f"Failed to create ticket: {response.status_code} {response.text}")
+        # Email field
+        self.email_label = QLabel("Your Email:")
+        self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("Enter your email address")
+        layout.addWidget(self.email_label)
+        layout.addWidget(self.email_input)
 
-def clear_fields():
-    entry_subject.delete(0, tk.END)
-    text_description.delete("1.0", tk.END)
-    entry_email.delete(0, tk.END)
-    priority_var.set("")
-    status_var.set("")
+        # Web-based editor
+        self.editor = QWebEngineView()
+        self.editor.setUrl(QUrl.fromLocalFile(os.path.abspath("editor.html")))
+        layout.addWidget(QLabel("Description:"))
+        layout.addWidget(self.editor)
 
-def create_and_clear():
-    create_ticket()
-    clear_fields()
+        # Priority dropdown
+        self.priority_label = QLabel("Priority:")
+        self.priority_dropdown = QComboBox()
+        self.priority_dropdown.addItems(["Low", "Medium", "High", "Urgent"])
+        layout.addWidget(self.priority_label)
+        layout.addWidget(self.priority_dropdown)
 
-# Create the main window
-root = tk.Tk()
-root.title("Freshdesk Ticket Creator")
-root.geometry("600x400") # This sets the initial size of the window
+        # Status dropdown
+        self.status_label = QLabel("Status:")
+        self.status_dropdown = QComboBox()
+        self.status_dropdown.addItems(["Open", "Pending", "Resolved", "Closed"])
+        layout.addWidget(self.status_label)
+        layout.addWidget(self.status_dropdown)
 
-# Configure the grid to expand with the window size
-root.grid_rowconfigure(1, weight=1)
-root.grid_columnconfigure(1, weight=1)
+        # Attachment selection
+        self.attachment_label = QLabel("Attachments:")
+        self.attachment_button = QPushButton("Add Attachments")
+        self.attachment_button.setFixedHeight(50)
+        self.attachment_button.clicked.connect(self.add_attachments)
+        self.attachments = []
+        layout.addWidget(self.attachment_label)
+        layout.addWidget(self.attachment_button)
 
-# Create and place the subject label and entry
-label_subject = tk.Label(root, text="Subject")
-label_subject.grid(row=0, column=0, padx=10, pady=10, sticky='w')
-entry_subject = tk.Entry(root)
-entry_subject.grid(row=0, column=1, padx=10, pady=10, sticky='ew')
+        # Buttons
+        self.submit_button = QPushButton("Create Ticket")
+        self.submit_button.setFixedHeight(50)  # Adjust the height
+        self.submit_button.clicked.connect(self.create_ticket)
+        layout.addWidget(self.submit_button)
 
-# Create and place the description label and text box with scrollbar
-label_description = tk.Label(root, text="Description")
-label_description.grid(row=1, column=0, padx=10, pady=10, sticky="nw")
-frame_description = tk.Frame(root)
-frame_description.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
-text_description = tk.Text(frame_description, wrap=tk.WORD, height=10, width=40)
-scrollbar_description = tk.Scrollbar(frame_description, command=text_description.yview)
-text_description.config(yscrollcommand=scrollbar_description.set)
-scrollbar_description.pack(side=tk.RIGHT, fill=tk.Y)
-text_description.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.clear_button = QPushButton("Clear Fields")
+        self.clear_button.clicked.connect(self.clear_fields)
+        layout.addWidget(self.clear_button)
 
-# Create and place the email label and entry
-label_email = tk.Label(root, text="Email")
-label_email.grid(row=2, column=0, padx=10, pady=10, sticky='w')
-entry_email = tk.Entry(root)
-entry_email.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
+        # Set layout
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
 
-# Create and place the priority label and dropdown
-label_priority = tk.Label(root, text="Priority")
-label_priority.grid(row=3, column=0, padx=10, pady=10, sticky='w')
-priority_var = tk.StringVar(value="Low") # Default to "Low"
-priority_dropdown = tk.OptionMenu(root, priority_var, "Low", "Medium", "High", "Urgent")
-priority_dropdown.grid(row=3, column=1, padx=10, pady=10, sticky='ew')
+    def add_attachments(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "Select Attachments")
+        if files:
+            self.attachments.extend(files)
+            self.attachment_label.setText(f"{len(self.attachments)} attachment(s) added")
 
-# Create and place the status label and dropdown
-label_status = tk.Label(root, text="Status")
-label_status.grid(row=4, column=0, padx=10, pady=10, sticky='w')
-status_var = tk.StringVar(value="Open") # Modified code to default to "Open" status
-status_dropdown = tk.OptionMenu(root, status_var, "Open", "Pending", "Resolved", "Closed")
-status_dropdown.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
+    def get_description_content(self):
+        # Fetch HTML content from the editor
+        self.editor.page().runJavaScript("getContent()", self.handle_description_content)
 
-# Create and place the clear button
-button_clear = tk.Button(root, text="Clear Fields", command=clear_fields)
-button_clear.grid(row=5, column=0, padx=10, pady=20, sticky='ew')
+    def handle_description_content(self, description):
+        # Extract and handle embedded images
+        self.description = description
+        self.embedded_images = self.extract_embedded_images(description)
+        self.send_ticket()
 
-# Create and place the submit button
-button_submit = tk.Button(root, text="Create Ticket", command=create_and_clear)
-button_submit.grid(row=5, column=1, padx=10, pady=20, sticky='ew')
+    def extract_embedded_images(self, description):
+        # Find base64-encoded images in the HTML content
+        embedded_images = []
+        img_matches = re.findall(r'<img src="data:image/(.*?);base64,(.*?)"', description)
+        for idx, (img_type, img_data) in enumerate(img_matches):
+            file_name = f"embedded_image_{idx + 1}.{img_type}"
+            file_path = os.path.join(os.getcwd(), file_name)
+            with open(file_path, "wb") as img_file:
+                img_file.write(base64.b64decode(img_data))
+            embedded_images.append(file_path)
+        return embedded_images
 
-# Run the application
-root.mainloop()
+    def create_ticket(self):
+        self.get_description_content()
+
+    def send_ticket(self):
+        subject = self.subject_input.text().strip()
+        description = self.description or "No description provided"
+        email = self.email_input.text().strip()
+        priority = self.priority_dropdown.currentText()
+        status = self.status_dropdown.currentText()
+
+        # Check required fields
+        if not subject or not description or not email:
+            QMessageBox.critical(self, "Error", "Subject, description, and email are required.")
+            return
+
+        # Map dropdown values
+        priority_mapping = {"Low": 1, "Medium": 2, "High": 3, "Urgent": 4}
+        status_mapping = {"Open": 2, "Pending": 3, "Resolved": 4, "Closed": 5}
+
+        # API payload
+        data = {
+            "email": email,
+            "subject": subject,
+            "description": description,
+            "priority": priority_mapping.get(priority, 1),
+            "status": status_mapping.get(status, 2)
+        }
+
+        try:
+            # Handle embedded images as attachments
+            files = [("attachments[]", (os.path.basename(f), open(f, "rb"))) for f in self.attachments]
+            files.extend([("attachments[]", (os.path.basename(f), open(f, "rb"))) for f in self.embedded_images])
+
+            # Send multipart/form-data if there are attachments
+            if files:
+                response = requests.post(
+                    f"{url}/api/v2/tickets",
+                    data=data,
+                    files=files,
+                    auth=(api_key, "X")
+                )
+                for _, f in files:
+                    f[1].close()  # Close files after sending
+
+                # Clean up temporary embedded image files
+                for file_path in self.embedded_images:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+            else:
+                # Send as JSON if no attachments
+                headers = {"Content-Type": "application/json"}
+                response = requests.post(
+                    f"{url}/api/v2/tickets",
+                    headers=headers,
+                    json=data,
+                    auth=(api_key, "X")
+                )
+
+            if response.status_code == 201:
+                QMessageBox.information(self, "Success", "Ticket created successfully!")
+                self.clear_fields()  # Clear fields after success
+            else:
+                QMessageBox.critical(
+                    self, "Error",
+                    f"Failed to create ticket. Status code: {response.status_code}\nResponse: {response.text}"
+                )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {e}")
+
+    def clear_fields(self):
+        self.subject_input.clear()
+        self.email_input.clear()
+        self.editor.page().runJavaScript("setContent('')")
+        self.priority_dropdown.setCurrentIndex(0)
+        self.status_dropdown.setCurrentIndex(0)
+        self.attachments = []
+        self.embedded_images = []
+        self.attachment_label.setText("Attachments:")
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = TicketCreator()
+    window.show()
+    sys.exit(app.exec_())
