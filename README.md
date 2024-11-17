@@ -4,10 +4,7 @@
 
 ## Overview
 
-**TicketMaker** is a Python application designed to simplify creating support tickets in a Freshdesk system. This repository contains two versions of the application:
-
-1. **Full Version**: Includes a rich text editor with support for embedded and uploaded images as attachments.
-2. **Lite Version**: A minimal implementation using Tkinter for a lightweight ticket creation experience.
+**TicketMaker** is a Python application designed to simplify creating support tickets in a Freshdesk system. This repository contains the full version of the application:
 
 ## Full Version
 
@@ -38,38 +35,9 @@
 
    ![Full Version Screenshot](images/successmessage.png)
 
-
 3. **Clear Form**:
    - The fields are reset after successful submission.
    - Embedded images saved during processing are automatically cleaned up.
-
-
-## Lite Version
-
-### Features
-
-- **Minimal Design**: Lightweight Tkinter-based GUI.
-- **Dropdown Options**: Predefined dropdowns for Priority and Status fields.
-- **Validation**: Ensures all required fields are filled before submission.
-- **Simple API Integration**: Communicates with the Freshdesk API for ticket creation.
-
-### How It Works
-
-1. **Fill in Required Fields**:
-   - **Subject**: Short description of the issue.
-   - **Description**: Plain text description of the issue.
-   - **Email**: Contact email of the requester.
-   - **Priority**: Dropdown to select ticket priority (Low, Medium, High, Urgent).
-   - **Status**: Dropdown to select ticket status (Open, Pending, Resolved, Closed).
-
-2. **Submit Ticket**:
-   - The app validates the inputs and submits the ticket details to the Freshdesk API.
-   - Displays a success or error message based on the API response.
-
-3. **Clear Form**:
-   - The fields are reset after submission.
-
-![Lite Version Screenshot](images/screenshotlite.png)
 
 ## Installation
 
@@ -77,8 +45,8 @@
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/sargeschultz11/Ticketmaker
-   cd Ticketmaker
+   git clone https://github.com/TicketMaker-Community-Project/TicketMaker
+   cd TicketMaker
    ```
 
 2. **Install Dependencies**:
@@ -88,32 +56,25 @@
    ```
 
 3. **Configure API Settings**:
-   - Open the config file (`config.json`).
-   - Replace `yourdomain.freshdesk.com` with your Freshdesk domain.
-   - Replace `your_api_key` with your Freshdesk API key.
+   - The installer will prompt you to enter your Freshdesk domain and API key during installation.
+   - These values will be stored in the system registry for use by the application.
 
-### Running the Full Version
+### Packaging the Application
 
-1. **Ensure WebEngine Requirements**:
-   The full version uses PyQt5 with QWebEngine, which may require additional setup for your system. Follow [PyQt5 installation documentation](https://riverbankcomputing.com/software/pyqt/intro) if needed.
-
-2. **Run the Application**:
+1. **Create an Executable**:
+   Use the following PyInstaller command to package the application:
    ```bash
-   python ticket_creator_full.py
+   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import win32serviceutil --hidden-import win32service --hidden-import win32event --hidden-import servicemanager ticketmaker.py
    ```
 
-### Running the Lite Version
-
-1. **Run the Application**:
-   ```bash
-   python ticket_creator_lite.py
-   ```
+2. **Build the Installer**:
+   Use the provided Inno Setup script to compile the installer for distribution.
 
 ## Notes
 
 - Ensure your Freshdesk API key has the necessary permissions to create tickets.
 - Use HTTPS for secure communication with the Freshdesk API.
-- For the full version, embedded images in the rich text editor will be extracted and attached automatically.
+- Embedded images in the rich text editor will be extracted and attached automatically.
 
 ## Contributing
 
