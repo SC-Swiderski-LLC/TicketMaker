@@ -11,9 +11,9 @@ ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
 AppPublisher=TicketMaker Community Project
-AppPublisherURL=https://github.com/sargeschultz11/Ticketmaker
-AppSupportURL=https://github.com/sargeschultz11/Ticketmaker/issues
-AppUpdatesURL=https://github.com/sargeschultz11/Ticketmaker/releases
+AppPublisherURL=https://github.com/TicketMaker-Community-Project/
+AppSupportURL=https://github.com/TicketMaker-Community-Project/TicketMaker/issues
+AppUpdatesURL=https://github.com/TicketMaker-Community-Project/TicketMaker/releases
 UninstallDisplayName=TicketMaker
 
 
