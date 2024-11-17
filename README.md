@@ -67,7 +67,7 @@
    ```
 
 2. **Build the Installer**:
-   Use the provided Inno Setup script to compile the installer for distribution.
+   Use the provided `TicketMakerInstaller.iss` Inno Setup script in the installer folder to compile the installer for distribution.
 
 ## Notes
 
