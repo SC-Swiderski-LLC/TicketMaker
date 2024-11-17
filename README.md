@@ -85,4 +85,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ---
 
-Thank you for using Ticketmaker! Let us know if you have any questions or suggestions.
+Thank you for using TicketMaker! Let us know if you have any questions or suggestions.
