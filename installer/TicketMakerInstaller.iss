@@ -28,12 +28,15 @@ Name: "{group}\Uninstall TicketMaker"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
 
 [Registry]
-Root: HKCU; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "URL"; ValueData: "{code:GetURL}"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "APIKey"; ValueData: "{code:GetAPIKey}"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\TicketMaker"; Flags: uninsdeletekey
+Root: HKLM; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "URL"; ValueData: "{code:GetURL}"; Flags: uninsdeletevalue
+Root: HKLM; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "APIKey"; ValueData: "{code:GetAPIKey}"; Flags: uninsdeletevalue
+Root: HKLM; Subkey: "Software\TicketMaker"; Flags: uninsdeletekey
 
 [Run]
 Filename: "{app}\TicketMaker.exe"; Description: "Launch TicketMaker"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{app}"
 
 [Code]
 var
@@ -113,6 +116,15 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
+  if CurStep = ssInstall then
+  begin
+    // Validate and store custom input values
+    ValidateCustomPage();
+    // Write Freshdesk URL and API Key to the registry
+    RegWriteStringValue(HKCU, 'Software\TicketMaker', 'URL', FreshdeskURL);
+    RegWriteStringValue(HKCU, 'Software\TicketMaker', 'APIKey', FreshdeskAPIKey);
+  end;
+
   if CurStep = ssPostInstall then
   begin
     if not IsPythonInstalled() then
@@ -123,3 +135,4 @@ begin
     InstallDependencies();
   end;
 end;
+
