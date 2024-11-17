@@ -3,6 +3,7 @@ installer/python-3.12.7-amd64.exe
 
 # Ignore all `.exe` files in the installer folder
 installer/*.exe
+*.exe
 
 # Ignore all `dist` and `build` directories
 dist/
