@@ -1,0 +1,134 @@
+[Setup]
+AppName=TicketMaker
+AppVersion=0.3.0
+DefaultDirName={pf}\TicketMaker
+DefaultGroupName=TicketMaker
+UninstallDisplayIcon={app}\TicketMaker.exe
+OutputBaseFilename=TicketMakerInstaller
+Compression=lzma
+SolidCompression=yes
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
+PrivilegesRequired=admin
+
+[Files]
+Source: "dist\TicketMaker.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "requirements.txt"; DestDir: "{tmp}"; Flags: ignoreversion
+Source: "python-3.12.7-amd64.exe"; DestDir: "{tmp}"; Flags: ignoreversion
+Source: "install_python.ps1"; DestDir: "{tmp}"; Flags: ignoreversion
+
+[Icons]
+Name: "{group}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
+Name: "{group}\Uninstall TicketMaker"; Filename: "{uninstallexe}"
+Name: "{commondesktop}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
+
+[Registry]
+Root: HKCU; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "URL"; ValueData: "{code:GetURL}"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "APIKey"; ValueData: "{code:GetAPIKey}"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\TicketMaker"; Flags: uninsdeletekey
+
+[Run]
+Filename: "{app}\TicketMaker.exe"; Description: "Launch TicketMaker"; Flags: nowait postinstall skipifsilent
+
+[Code]
+var
+  FreshdeskURL: string;
+  FreshdeskAPIKey: string;
+  CustomPage: TInputQueryWizardPage;
+
+procedure InstallPython();
+var
+  PowerShellPath: string;
+  ScriptPath: string;
+  TempDirPath: string;
+  ErrorCode: Integer;
+begin
+  PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+  TempDirPath := ExpandConstant('{tmp}');
+  ScriptPath := TempDirPath + '\install_python.ps1';
+
+  if FileExists(ScriptPath) then
+  begin
+    MsgBox('Installing Python 3.12.7 system-wide...', mbInformation, MB_OK);
+    Exec(PowerShellPath, '-ExecutionPolicy Bypass -File "' + ScriptPath + '" -TempDirPath "' + TempDirPath + '"', '', SW_SHOW, ewWaitUntilTerminated, ErrorCode);
+    if ErrorCode <> 0 then
+      MsgBox('Failed to install Python. Check log at ' + TempDirPath + '\python_install.log', mbError, MB_OK);
+  end
+  else
+  begin
+    MsgBox('Python installer script not found: ' + ScriptPath, mbError, MB_OK);
+  end;
+end;
+
+function IsPythonInstalled(): Boolean;
+var
+  PythonPath: string;
+begin
+  Result := RegQueryStringValue(HKLM, 'Software\Python\PythonCore\3.12\InstallPath', '', PythonPath);
+end;
+
+procedure InstallDependencies();
+var
+  ErrorCode: Integer;
+  PythonPath: string;
+begin
+  if RegQueryStringValue(HKLM, 'Software\Python\PythonCore\3.12\InstallPath', '', PythonPath) then
+  begin
+    Exec(PythonPath + 'python.exe', '-m pip install -r ' + ExpandConstant('{tmp}\requirements.txt'), '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
+    if ErrorCode <> 0 then
+      MsgBox('Failed to install dependencies.', mbError, MB_OK);
+  end
+  else
+  begin
+    MsgBox('Python not found. Cannot install dependencies.', mbError, MB_OK);
+  end;
+end;
+
+function GetURL(Param: string): string;
+begin
+  Result := FreshdeskURL;
+end;
+
+function GetAPIKey(Param: string): string;
+begin
+  Result := FreshdeskAPIKey;
+end;
+
+procedure CreateCustomPage();
+begin
+  CustomPage := CreateInputQueryPage(wpWelcome,
+    'Freshdesk Configuration',
+    'Please provide your Freshdesk URL and API Key.',
+    'These values are required to configure the application.');
+
+  CustomPage.Add('Freshdesk URL:', False);
+  CustomPage.Add('Freshdesk API Key:', False);
+end;
+
+procedure ValidateCustomPage();
+begin
+  FreshdeskURL := CustomPage.Values[0];
+  FreshdeskAPIKey := CustomPage.Values[1];
+
+  if (FreshdeskURL = '') or (FreshdeskAPIKey = '') then
+  begin
+    MsgBox('Both Freshdesk URL and API Key are required to proceed.', mbError, MB_OK);
+    RaiseException('Validation failed.'); // Stop installation if validation fails
+  end;
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = wpWelcome then
+    CreateCustomPage();
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    if not IsPythonInstalled() then
+      InstallPython();
+    InstallDependencies();
+  end;
+end;
