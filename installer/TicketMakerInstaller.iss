@@ -18,7 +18,7 @@ UninstallDisplayName=TicketMaker
 
 
 [Files]
-Source: "dist\TicketMaker.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "TicketMaker.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "requirements.txt"; DestDir: "{tmp}"; Flags: ignoreversion
 Source: "install_dependencies.ps1"; DestDir: "{tmp}"; Flags: ignoreversion
 
