@@ -15,6 +15,27 @@ import win32serviceutil
 import win32service
 import win32event
 import servicemanager
+import winreg
+
+def get_registry_value(key, subkey, value_name):
+    try:
+        registry_key = winreg.OpenKey(key, subkey, 0, winreg.KEY_READ)
+        value, _ = winreg.QueryValueEx(registry_key, value_name)
+        winreg.CloseKey(registry_key)
+        return value
+    except FileNotFoundError:
+        return None
+
+# Registry constants
+REGISTRY_PATH = r"SOFTWARE\TicketMaker"
+
+# Retrieve URL and API key from the registry
+url = get_registry_value(winreg.HKEY_LOCAL_MACHINE, REGISTRY_PATH, "URL")
+api_key = get_registry_value(winreg.HKEY_LOCAL_MACHINE, REGISTRY_PATH, "APIKey")
+
+# Validate that the values are retrieved successfully
+if not url or not api_key:
+    raise RuntimeError("URL or APIKey is missing from the registry. Please reinstall and configure TicketMaker.")
 
 
 # Locate the configuration file and other resources
