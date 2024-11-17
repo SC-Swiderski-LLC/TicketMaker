@@ -6,7 +6,6 @@
 
 **TicketMaker** is a Python application designed to simplify creating support tickets in a Freshdesk system. This repository contains the full version of the application:
 
-## Full Version
 
 ### Features
 
