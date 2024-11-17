@@ -1,0 +1,13 @@
+# Ignore the Python installer
+installer/python-3.12.7-amd64.exe
+
+# Ignore all `.exe` files in the installer folder
+installer/*.exe
+
+# Ignore all `dist` and `build` directories
+dist/
+build/
+
+# Ignore IDE or editor-specific files
+.vscode/
+*.log
