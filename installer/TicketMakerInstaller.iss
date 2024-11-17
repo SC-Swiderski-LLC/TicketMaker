@@ -10,12 +10,17 @@ SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
+AppPublisher=TicketMaker Community
+AppPublisherURL=https://github.com/sargeschultz11/Ticketmaker
+AppSupportURL=https://github.com/sargeschultz11/Ticketmaker/issues
+AppUpdatesURL=https://github.com/sargeschultz11/Ticketmaker/releases
+UninstallDisplayName=TicketMaker
+
 
 [Files]
 Source: "dist\TicketMaker.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "requirements.txt"; DestDir: "{tmp}"; Flags: ignoreversion
-Source: "python-3.12.7-amd64.exe"; DestDir: "{tmp}"; Flags: ignoreversion
-Source: "install_python.ps1"; DestDir: "{tmp}"; Flags: ignoreversion
+Source: "install_dependencies.ps1"; DestDir: "{tmp}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
@@ -36,30 +41,6 @@ var
   FreshdeskAPIKey: string;
   CustomPage: TInputQueryWizardPage;
 
-procedure InstallPython();
-var
-  PowerShellPath: string;
-  ScriptPath: string;
-  TempDirPath: string;
-  ErrorCode: Integer;
-begin
-  PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
-  TempDirPath := ExpandConstant('{tmp}');
-  ScriptPath := TempDirPath + '\install_python.ps1';
-
-  if FileExists(ScriptPath) then
-  begin
-    MsgBox('Installing Python 3.12.7 system-wide...', mbInformation, MB_OK);
-    Exec(PowerShellPath, '-ExecutionPolicy Bypass -File "' + ScriptPath + '" -TempDirPath "' + TempDirPath + '"', '', SW_SHOW, ewWaitUntilTerminated, ErrorCode);
-    if ErrorCode <> 0 then
-      MsgBox('Failed to install Python. Check log at ' + TempDirPath + '\python_install.log', mbError, MB_OK);
-  end
-  else
-  begin
-    MsgBox('Python installer script not found: ' + ScriptPath, mbError, MB_OK);
-  end;
-end;
-
 function IsPythonInstalled(): Boolean;
 var
   PythonPath: string;
@@ -69,18 +50,25 @@ end;
 
 procedure InstallDependencies();
 var
+  PowerShellPath: string;
+  ScriptPath: string;
+  TempDirPath: string;
   ErrorCode: Integer;
-  PythonPath: string;
 begin
-  if RegQueryStringValue(HKLM, 'Software\Python\PythonCore\3.12\InstallPath', '', PythonPath) then
+  PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+  TempDirPath := ExpandConstant('{tmp}');
+  ScriptPath := TempDirPath + '\install_dependencies.ps1';
+
+  if FileExists(ScriptPath) then
   begin
-    Exec(PythonPath + 'python.exe', '-m pip install -r ' + ExpandConstant('{tmp}\requirements.txt'), '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
+    MsgBox('Installing Python dependencies...', mbInformation, MB_OK);
+    Exec(PowerShellPath, '-ExecutionPolicy Bypass -File "' + ScriptPath + '" -TempDirPath "' + TempDirPath + '"', '', SW_SHOW, ewWaitUntilTerminated, ErrorCode);
     if ErrorCode <> 0 then
-      MsgBox('Failed to install dependencies.', mbError, MB_OK);
+      MsgBox('Failed to install Python dependencies. Check log for details.', mbError, MB_OK);
   end
   else
   begin
-    MsgBox('Python not found. Cannot install dependencies.', mbError, MB_OK);
+    MsgBox('Dependency installer script not found: ' + ScriptPath, mbError, MB_OK);
   end;
 end;
 
@@ -128,7 +116,10 @@ begin
   if CurStep = ssPostInstall then
   begin
     if not IsPythonInstalled() then
-      InstallPython();
+    begin
+      MsgBox('Python 3.12 is not installed. Please install Python 3.12 or later before proceeding.', mbError, MB_OK);
+      RaiseException('Python not installed.');
+    end;
     InstallDependencies();
   end;
 end;
