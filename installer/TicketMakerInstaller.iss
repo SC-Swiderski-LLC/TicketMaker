@@ -85,7 +85,7 @@ end;
 procedure CreateCustomPage();
 begin
   CustomPage := CreateInputQueryPage(wpWelcome,
-    'Freshdesk Configuration',
+    'Freshdesk Service Configuration',
     'Please provide your Freshdesk URL and API Key.',
     'These values are required to configure the application.');
 
