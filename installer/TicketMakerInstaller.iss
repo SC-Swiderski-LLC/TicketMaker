@@ -15,6 +15,9 @@ AppPublisherURL=https://github.com/TicketMaker-Community-Project/
 AppSupportURL=https://github.com/TicketMaker-Community-Project/TicketMaker/issues
 AppUpdatesURL=https://github.com/TicketMaker-Community-Project/TicketMaker/releases
 UninstallDisplayName=TicketMaker
+WizardImageFile=TicketMakerLogo.bmp
+WizardSmallImageFile=TicketMakerLogoSmall.bmp
+
 
 
 [Files]
@@ -31,6 +34,7 @@ Name: "{commondesktop}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
 Root: HKLM; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "URL"; ValueData: "{code:GetURL}"; Flags: uninsdeletevalue
 Root: HKLM; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "APIKey"; ValueData: "{code:GetAPIKey}"; Flags: uninsdeletevalue
 Root: HKLM; Subkey: "Software\TicketMaker"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "TicketMaker"; ValueData: "{app}\TicketMaker.exe"; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\TicketMaker.exe"; Description: "Launch TicketMaker"; Flags: nowait postinstall skipifsilent
