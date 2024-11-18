@@ -144,6 +144,7 @@ class TicketCreator(QMainWindow):
 
     def exit_application(self):
         """Exit the application cleanly."""
+        self.tray_icon.hide()
         QApplication.quit()
 
     def add_attachments(self):
@@ -152,23 +153,45 @@ class TicketCreator(QMainWindow):
             self.attachments.extend(files)
             self.attachment_label.setText(f"{len(self.attachments)} attachment(s) added")
 
+    def get_description_content(self):
+        self.editor.page().runJavaScript("getContent()", self.handle_description_content)
+
+    def handle_description_content(self, description):
+        self.description = description
+        self.embedded_images = self.extract_embedded_images(description)
+        self.send_ticket()
+
+    def extract_embedded_images(self, description):
+        embedded_images = []
+        img_matches = re.findall(r'<img src="data:image/(.*?);base64,(.*?)"', description)
+        for idx, (img_type, img_data) in enumerate(img_matches):
+            file_name = f"embedded_image_{idx + 1}.{img_type}"
+            file_path = os.path.join(os.getcwd(), file_name)
+            with open(file_path, "wb") as img_file:
+                img_file.write(base64.b64decode(img_data))
+            embedded_images.append(file_path)
+        return embedded_images
+
     def create_ticket(self):
+        self.get_description_content()
+
+    def send_ticket(self):
         subject = self.subject_input.text().strip()
+        description = self.description or "No description provided"
         email = self.email_input.text().strip()
         priority = self.priority_dropdown.currentText()
         status = self.status_dropdown.currentText()
 
-        # Retrieve the description content from the editor
-        self.editor.page().runJavaScript("document.documentElement.outerHTML", self.handle_description_content)
-
-        if not subject or not email:
-            QMessageBox.critical(self, "Error", "Subject and Email are required fields.")
+        # Check required fields
+        if not subject or not description or not email:
+            QMessageBox.critical(self, "Error", "Subject, description, and email are required.")
             return
 
-    def handle_description_content(self, description):
+        # Map dropdown values
         priority_mapping = {"Low": 1, "Medium": 2, "High": 3, "Urgent": 4}
         status_mapping = {"Open": 2, "Pending": 3, "Resolved": 4, "Closed": 5}
 
+        # API payload
         data = {
             "email": self.email_input.text().strip(),
             "subject": self.subject_input.text().strip(),
@@ -177,34 +200,53 @@ class TicketCreator(QMainWindow):
             "status": status_mapping.get(self.status_dropdown.currentText(), 2)
         }
 
-        files = [
-            ("attachments[]", (os.path.basename(f), open(f, "rb")))
-            for f in self.attachments
-        ]
-
         try:
+            files = [
+                ("attachments[]", (os.path.basename(f), open(f, "rb")))
+                for f in self.attachments
+            ]
+            files.extend([
+                ("attachments[]", (os.path.basename(f), open(f, "rb")))
+                for f in self.embedded_images
+            ])
+
             if files:
-                response = requests.post(f"{url}/api/v2/tickets", data=data, files=files, auth=(api_key, "X"))
+                response = requests.post(
+                    f"{url}/api/v2/tickets",
+                    data=data,
+                    files=files,
+                    auth=(api_key, "X")
+                )
                 for _, f in files:
                     f[1].close()
+                for file_path in self.embedded_images:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
             else:
                 headers = {"Content-Type": "application/json"}
-                response = requests.post(f"{url}/api/v2/tickets", headers=headers, json=data, auth=(api_key, "X"))
+                response = requests.post(
+                    f"{url}/api/v2/tickets",
+                    headers=headers,
+                    json=data,
+                    auth=(api_key, "X")
+                )
 
             if response.status_code == 201:
                 QMessageBox.information(self, "Success", "Ticket created successfully!")
                 self.clear_fields()
             else:
-                QMessageBox.critical(self, "Error", f"Failed to create ticket.\n{response.text}")
+                QMessageBox.critical(self, "Error", f"Failed to create ticket. Status code: {response.status_code}\nResponse: {response.text}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {e}")
 
     def clear_fields(self):
         self.subject_input.clear()
         self.email_input.clear()
+        self.editor.page().runJavaScript("setContent('')")
         self.priority_dropdown.setCurrentIndex(0)
         self.status_dropdown.setCurrentIndex(0)
         self.attachments = []
+        self.embedded_images = []
         self.attachment_label.setText("Attachments:")
 
 
