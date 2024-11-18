@@ -17,6 +17,24 @@ import win32event
 import servicemanager
 import winreg
 
+def add_to_startup(app_name, app_path):
+    """Add the application to Windows startup."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
+            winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, app_path)
+    except Exception as e:
+        print(f"Failed to add to startup: {e}")
+
+def remove_from_startup(app_name):
+    """Remove the application from Windows startup."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
+            winreg.DeleteValue(key, app_name)
+    except FileNotFoundError:
+        pass  # The app was not in startup
+    except Exception as e:
+        print(f"Failed to remove from startup: {e}")
+
 def get_registry_value(key, subkey, value_name):
     try:
         registry_key = winreg.OpenKey(key, subkey, 0, winreg.KEY_READ)
@@ -273,6 +291,9 @@ class TicketMakerService(win32serviceutil.ServiceFramework):
 
 
 if __name__ == "__main__":
+    app_path = os.path.abspath(__file__)
+    add_to_startup("TicketMaker", app_path)  # Add app to startup
+
     if len(sys.argv) > 1 and sys.argv[1] in ["install", "remove", "start", "stop"]:
         win32serviceutil.HandleCommandLine(TicketMakerService)
     else:
