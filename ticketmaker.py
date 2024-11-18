@@ -125,11 +125,26 @@ class TicketCreator(QMainWindow):
         open_action = tray_menu.addAction("Open TicketMaker")
         open_action.triggered.connect(self.show)
         exit_action = tray_menu.addAction("Exit")
-        exit_action.triggered.connect(QApplication.quit)
+        exit_action.triggered.connect(self.exit_application)
 
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self.show)
         self.tray_icon.show()
+
+    def closeEvent(self, event):
+        """Override the close event to hide the window instead of quitting."""
+        event.ignore()
+        self.hide()
+        self.tray_icon.showMessage(
+            "TicketMaker",
+            "TicketMaker is still running in the system tray.",
+            QSystemTrayIcon.Information,
+            3000
+        )
+
+    def exit_application(self):
+        """Exit the application cleanly."""
+        QApplication.quit()
 
     def add_attachments(self):
         files, _ = QFileDialog.getOpenFileNames(self, "Select Attachments")
