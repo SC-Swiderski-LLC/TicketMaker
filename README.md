@@ -68,6 +68,9 @@
 
 2. **Build the Installer**:
    Use the provided `TicketMakerInstaller.iss` Inno Setup script in the installer folder to compile the installer for distribution.
+   
+   - Place the `ticketmaker.exe` from the `dist` folder into the the `installer` folder.
+   - Run the Inno Setup script to compile into the installer.
 
 ## Notes
 
