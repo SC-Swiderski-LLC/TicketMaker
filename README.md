@@ -63,7 +63,8 @@
 1. **Create an Executable**:
    Use the following PyInstaller command to package the application:
    ```bash
-   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." ticketmaker.py
+   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import PyQt5.QtWidgets --hidden-import PyQt5.QtWebEngineWidgets --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui ticketmaker.py
+
    ```
 
 2. **Build the Installer**:
