@@ -72,28 +72,28 @@ class TicketCreator(QMainWindow):
         self.setWindowIcon(QIcon(resource_path("assets/icon.ico")))
 
         # Main widget and layout
-        central_widget = QWidget()
-        layout = QVBoxLayout()
+        self.central_widget = QWidget()
+        self.layout = QVBoxLayout()
 
         # Subject
         self.subject_label = QLabel("Subject:")
         self.subject_input = QLineEdit()
         self.subject_input.setPlaceholderText("Enter the ticket subject here")
-        layout.addWidget(self.subject_label)
-        layout.addWidget(self.subject_input)
+        self.layout.addWidget(self.subject_label)
+        self.layout.addWidget(self.subject_input)
 
         # Email field
         self.email_label = QLabel("Your Email:")
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("Enter your email address")
-        layout.addWidget(self.email_label)
-        layout.addWidget(self.email_input)
+        self.layout.addWidget(self.email_label)
+        self.layout.addWidget(self.email_input)
 
         # Web-based editor
         self.editor = QWebEngineView()
         self.editor.setUrl(QUrl.fromLocalFile(resource_path("editor.html")))
-        layout.addWidget(QLabel("Description:"))
-        layout.addWidget(self.editor)
+        self.layout.addWidget(QLabel("Description:"))
+        self.layout.addWidget(self.editor)
 
         # Enable additional WebEngine settings
         self.editor.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -103,15 +103,15 @@ class TicketCreator(QMainWindow):
         self.priority_label = QLabel("Priority:")
         self.priority_dropdown = QComboBox()
         self.priority_dropdown.addItems(["Low", "Medium", "High", "Urgent"])
-        layout.addWidget(self.priority_label)
-        layout.addWidget(self.priority_dropdown)
+        self.layout.addWidget(self.priority_label)
+        self.layout.addWidget(self.priority_dropdown)
 
         # Status dropdown
         self.status_label = QLabel("Status:")
         self.status_dropdown = QComboBox()
         self.status_dropdown.addItems(["Open", "Pending", "Resolved", "Closed"])
-        layout.addWidget(self.status_label)
-        layout.addWidget(self.status_dropdown)
+        self.layout.addWidget(self.status_label)
+        self.layout.addWidget(self.status_dropdown)
 
         # Attachment selection
         self.attachment_label = QLabel("Attachments:")
@@ -119,22 +119,22 @@ class TicketCreator(QMainWindow):
         self.attachment_button.setFixedHeight(50)
         self.attachment_button.clicked.connect(self.add_attachments)
         self.attachments = []
-        layout.addWidget(self.attachment_label)
-        layout.addWidget(self.attachment_button)
+        self.layout.addWidget(self.attachment_label)
+        self.layout.addWidget(self.attachment_button)
 
         # Buttons
         self.submit_button = QPushButton("Create Ticket")
         self.submit_button.setFixedHeight(50)
         self.submit_button.clicked.connect(self.create_ticket)
-        layout.addWidget(self.submit_button)
+        self.layout.addWidget(self.submit_button)
 
         self.clear_button = QPushButton("Clear Fields")
         self.clear_button.clicked.connect(self.clear_fields)
-        layout.addWidget(self.clear_button)
+        self.layout.addWidget(self.clear_button)
 
         # Set layout
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
+        self.central_widget.setLayout(self.layout)
+        self.setCentralWidget(self.central_widget)
 
         # System Tray Icon
         self.tray_icon = QSystemTrayIcon(self)
