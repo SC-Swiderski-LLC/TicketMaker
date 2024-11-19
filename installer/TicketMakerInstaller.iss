@@ -1,6 +1,6 @@
 [Setup]
 AppName=TicketMaker
-AppVersion=0.3.0
+AppVersion=0.3.1
 DefaultDirName={localappdata}\TicketMaker
 DefaultGroupName=TicketMaker
 UninstallDisplayIcon={app}\TicketMaker.exe
