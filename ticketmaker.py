@@ -99,6 +99,34 @@ class TicketCreator(QMainWindow):
         self.editor.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.editor.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
 
+        # Type Dropdown
+        self.dropdown_type_label = QLabel("Ticket Type: ")
+        self.layout.addWidget(self.dropdown_type_label)
+        self.dropdown_type = QComboBox()
+        self.dropdown_type.addItems(["Alert", "EDR", "Problem", "Task", "Sage", "Other"])
+        self.layout.addWidget(self.dropdown_type)
+        self.dropdown_type.currentTextChanged.connect(self.handle_dropdown_type_change)
+
+        # Classification Dropdown
+        self.classification_label = QLabel("Classification: ")
+        self.classification_label.hide()
+        self.layout.addWidget(self.classification_label)
+        self.dropdown_classification = QComboBox()
+        self.dropdown_classification.addItems([
+            "Intacct - Support Request",
+            "Intacct - Report Issue",
+            "Intacct - Enhancement Request",
+            "SCM - Support Request",
+            "SCM - Report Issue",
+            "SCM - Enhancement Request",
+            "Sage - Access Request",
+            "Sage - System Down",
+            "Sage - General Inquiry",
+            "Password Reset"
+        ])
+        self.dropdown_classification.hide()
+        self.layout.addWidget(self.dropdown_classification)        
+
         # Priority dropdown
         self.priority_label = QLabel("Priority:")
         self.priority_dropdown = QComboBox()
@@ -223,7 +251,11 @@ class TicketCreator(QMainWindow):
             "subject": self.subject_input.text().strip(),
             "description": description,
             "priority": priority_mapping.get(self.priority_dropdown.currentText(), 1),
-            "status": status_mapping.get(self.status_dropdown.currentText(), 2)
+            "status": status_mapping.get(self.status_dropdown.currentText(), 2),
+            "type": self.dropdown_type,
+            "custom_fields": {
+                "classification": self.dropdown_classification
+            } 
         }
 
         try:
@@ -274,6 +306,14 @@ class TicketCreator(QMainWindow):
         self.attachments = []
         self.embedded_images = []
         self.attachment_label.setText("Attachments:")
+
+    def handle_dropdown_type_change(self, value):
+        if value == "Sage":
+            self.classification_label.show()
+            self.dropdown_classification.show()
+        else:
+            self.classification_label.hide()
+            self.dropdown_classification.hide()
 
 
 if __name__ == "__main__":
