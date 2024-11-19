@@ -1,7 +1,7 @@
 [Setup]
 AppName=TicketMaker
 AppVersion=0.3.0
-DefaultDirName={pf}\TicketMaker
+DefaultDirName={localappdata}\TicketMaker
 DefaultGroupName=TicketMaker
 UninstallDisplayIcon={app}\TicketMaker.exe
 OutputBaseFilename=TicketMakerInstaller
@@ -9,7 +9,7 @@ Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
-PrivilegesRequired=admin
+PrivilegesRequired=lowest
 AppPublisher=TicketMaker Community Project
 AppPublisherURL=https://github.com/TicketMaker-Community-Project/
 AppSupportURL=https://github.com/TicketMaker-Community-Project/TicketMaker/issues
@@ -18,22 +18,20 @@ UninstallDisplayName=TicketMaker
 WizardImageFile=TicketMakerLogo.bmp
 WizardSmallImageFile=TicketMakerLogoSmall.bmp
 
-
-
 [Files]
 Source: "TicketMaker.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "requirements.txt"; DestDir: "{tmp}"; Flags: ignoreversion
-Source: "install_dependencies.ps1"; DestDir: "{tmp}"; Flags: ignoreversion
+Source: "install_dependencies_user.cmd"; DestDir: "{tmp}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
 Name: "{group}\Uninstall TicketMaker"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
+Name: "{userdesktop}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
 
 [Registry]
-Root: HKLM; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "URL"; ValueData: "{code:GetURL}"; Flags: uninsdeletevalue
-Root: HKLM; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "APIKey"; ValueData: "{code:GetAPIKey}"; Flags: uninsdeletevalue
-Root: HKLM; Subkey: "Software\TicketMaker"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "URL"; ValueData: "{code:GetURL}"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\TicketMaker"; ValueType: string; ValueName: "APIKey"; ValueData: "{code:GetAPIKey}"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\TicketMaker"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "TicketMaker"; ValueData: "{app}\TicketMaker.exe"; Flags: uninsdeletevalue
 
 [Run]
@@ -52,30 +50,28 @@ function IsPythonInstalled(): Boolean;
 var
   PythonPath: string;
 begin
-  Result := RegQueryStringValue(HKLM, 'Software\Python\PythonCore\3.12\InstallPath', '', PythonPath);
+  Result := FileExists(ExpandConstant('{localappdata}\Programs\Python\Python312\python.exe'));
 end;
 
 procedure InstallDependencies();
 var
-  PowerShellPath: string;
-  ScriptPath: string;
+  CmdPath: string;
   TempDirPath: string;
   ErrorCode: Integer;
 begin
-  PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+  CmdPath := ExpandConstant('{tmp}\install_dependencies_user.cmd');
   TempDirPath := ExpandConstant('{tmp}');
-  ScriptPath := TempDirPath + '\install_dependencies.ps1';
 
-  if FileExists(ScriptPath) then
+  if FileExists(CmdPath) then
   begin
     MsgBox('Installing Python dependencies...', mbInformation, MB_OK);
-    Exec(PowerShellPath, '-ExecutionPolicy Bypass -File "' + ScriptPath + '" -TempDirPath "' + TempDirPath + '"', '', SW_SHOW, ewWaitUntilTerminated, ErrorCode);
+    Exec(CmdPath, '', TempDirPath, SW_SHOW, ewWaitUntilTerminated, ErrorCode);
     if ErrorCode <> 0 then
       MsgBox('Failed to install Python dependencies. Check log for details.', mbError, MB_OK);
   end
   else
   begin
-    MsgBox('Dependency installer script not found: ' + ScriptPath, mbError, MB_OK);
+    MsgBox('Dependency installer script not found: ' + CmdPath, mbError, MB_OK);
   end;
 end;
 
@@ -139,4 +135,3 @@ begin
     InstallDependencies();
   end;
 end;
-

@@ -63,11 +63,14 @@
 1. **Create an Executable**:
    Use the following PyInstaller command to package the application:
    ```bash
-   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import win32serviceutil --hidden-import win32service --hidden-import win32event --hidden-import servicemanager ticketmaker.py
+   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." ticketmaker.py
    ```
 
 2. **Build the Installer**:
    Use the provided `TicketMakerInstaller.iss` Inno Setup script in the installer folder to compile the installer for distribution.
+   
+   - Place the `ticketmaker.exe` from the `dist` folder into the the `installer` folder.
+   - Run the Inno Setup script to compile into the installer.
 
 ## Notes
 

@@ -3,39 +3,39 @@ import os
 import json
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QComboBox,
-    QPushButton, QWidget, QMessageBox, QFileDialog, QSystemTrayIcon, QMenu
+    QPushButton, QWidget, QMessageBox, QFileDialog, QSystemTrayIcon, QMenu, QSplashScreen
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-from PyQt5.QtCore import QUrl
-from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QUrl, Qt
+from PyQt5.QtGui import QIcon, QPixmap
 import requests
 import base64
 import re
-import win32serviceutil
-import win32service
-import win32event
-import servicemanager
 import winreg
 
+
 def add_to_startup(app_name, app_path):
-    """Add the application to Windows startup."""
+    """Add the application to Windows startup for the current user."""
     try:
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
             winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, app_path)
     except Exception as e:
         print(f"Failed to add to startup: {e}")
 
+
 def remove_from_startup(app_name):
     """Remove the application from Windows startup."""
     try:
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
             winreg.DeleteValue(key, app_name)
     except FileNotFoundError:
         pass  # The app was not in startup
     except Exception as e:
         print(f"Failed to remove from startup: {e}")
 
+
 def get_registry_value(key, subkey, value_name):
+    """Retrieve a value from the Windows registry."""
     try:
         registry_key = winreg.OpenKey(key, subkey, 0, winreg.KEY_READ)
         value, _ = winreg.QueryValueEx(registry_key, value_name)
@@ -44,12 +44,13 @@ def get_registry_value(key, subkey, value_name):
     except FileNotFoundError:
         return None
 
+
 # Registry constants
 REGISTRY_PATH = r"SOFTWARE\\TicketMaker"
 
 # Retrieve URL and API key from the registry
-url = get_registry_value(winreg.HKEY_LOCAL_MACHINE, REGISTRY_PATH, "URL")
-api_key = get_registry_value(winreg.HKEY_LOCAL_MACHINE, REGISTRY_PATH, "APIKey")
+url = get_registry_value(winreg.HKEY_CURRENT_USER, REGISTRY_PATH, "URL")
+api_key = get_registry_value(winreg.HKEY_CURRENT_USER, REGISTRY_PATH, "APIKey")
 
 # Validate that the values are retrieved successfully
 if not url or not api_key:
@@ -57,7 +58,7 @@ if not url or not api_key:
 
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller. """
+    """Get absolute path to resource, works for dev and for PyInstaller."""
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
@@ -268,41 +269,30 @@ class TicketCreator(QMainWindow):
         self.attachment_label.setText("Attachments:")
 
 
-class TicketMakerService(win32serviceutil.ServiceFramework):
-    _svc_name_ = "TicketMakerService"
-    _svc_display_name_ = "TicketMaker Application Service"
-
-    def __init__(self, args):
-        win32serviceutil.ServiceFramework.__init__(self, args)
-        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        self.is_running = True
-
-    def SvcStop(self):
-        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        self.is_running = False
-        win32event.SetEvent(self.hWaitStop)
-
-    def SvcDoRun(self):
-        servicemanager.LogInfoMsg("TicketMaker Service is starting...")
-        app = QApplication([])
-        window = TicketCreator()
-        window.hide()  # Service starts with GUI hidden
-        app.exec_()
-
-
 if __name__ == "__main__":
     app_path = os.path.abspath(__file__)
     add_to_startup("TicketMaker", app_path)  # Add app to startup
 
-    if len(sys.argv) > 1 and sys.argv[1] in ["install", "remove", "start", "stop"]:
-        win32serviceutil.HandleCommandLine(TicketMakerService)
-    else:
-        app = QApplication(sys.argv)
-        window = TicketCreator()
-        window.show()
+    app = QApplication(sys.argv)
 
-        try:
-            sys.exit(app.exec_())
-        except SystemExit:
-            print("Application closed cleanly.")
+    # Splash Screen Logic
+    splash_pix = QPixmap(resource_path("assets/splash_logo.png"))  # Use your splash logo file
+    splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+    splash.setWindowFlag(Qt.FramelessWindowHint)
+    splash.show()
+
+    try:
+        # Initialize the main window
+        window = TicketCreator()
+        splash.finish(window)  # Close the splash screen when the window is ready
+        window.show()
+    except Exception as e:
+        splash.close()  # Ensure the splash screen closes on error
+        QMessageBox.critical(None, "Error", f"An error occurred:\n{str(e)}")
+        sys.exit(1)  # Exit the app cleanly
+
+    try:
+        sys.exit(app.exec_())
+    except SystemExit:
+        print("Application closed cleanly.")
 
