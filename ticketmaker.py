@@ -3,15 +3,16 @@ import os
 import json
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QComboBox,
-    QPushButton, QWidget, QMessageBox, QFileDialog, QSystemTrayIcon, QMenu
+    QPushButton, QWidget, QMessageBox, QFileDialog, QSystemTrayIcon, QMenu, QSplashScreen
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-from PyQt5.QtCore import QUrl
-from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QUrl, Qt
+from PyQt5.QtGui import QIcon, QPixmap
 import requests
 import base64
 import re
 import winreg
+
 
 def add_to_startup(app_name, app_path):
     """Add the application to Windows startup for the current user."""
@@ -20,6 +21,7 @@ def add_to_startup(app_name, app_path):
             winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, app_path)
     except Exception as e:
         print(f"Failed to add to startup: {e}")
+
 
 def remove_from_startup(app_name):
     """Remove the application from Windows startup."""
@@ -31,6 +33,7 @@ def remove_from_startup(app_name):
     except Exception as e:
         print(f"Failed to remove from startup: {e}")
 
+
 def get_registry_value(key, subkey, value_name):
     """Retrieve a value from the Windows registry."""
     try:
@@ -40,6 +43,7 @@ def get_registry_value(key, subkey, value_name):
         return value
     except FileNotFoundError:
         return None
+
 
 # Registry constants
 REGISTRY_PATH = r"SOFTWARE\\TicketMaker"
@@ -52,10 +56,12 @@ api_key = get_registry_value(winreg.HKEY_CURRENT_USER, REGISTRY_PATH, "APIKey")
 if not url or not api_key:
     raise RuntimeError("URL or APIKey is missing from the registry. Please reinstall and configure TicketMaker.")
 
+
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller. """
+    """Get absolute path to resource, works for dev and for PyInstaller."""
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
+
 
 # GUI Application Class
 class TicketCreator(QMainWindow):
@@ -268,10 +274,25 @@ if __name__ == "__main__":
     add_to_startup("TicketMaker", app_path)  # Add app to startup
 
     app = QApplication(sys.argv)
-    window = TicketCreator()
-    window.show()
+
+    # Splash Screen Logic
+    splash_pix = QPixmap(resource_path("assets/splash_logo.png"))  # Use your splash logo file
+    splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+    splash.setWindowFlag(Qt.FramelessWindowHint)
+    splash.show()
+
+    try:
+        # Initialize the main window
+        window = TicketCreator()
+        splash.finish(window)  # Close the splash screen when the window is ready
+        window.show()
+    except Exception as e:
+        splash.close()  # Ensure the splash screen closes on error
+        QMessageBox.critical(None, "Error", f"An error occurred:\n{str(e)}")
+        sys.exit(1)  # Exit the app cleanly
 
     try:
         sys.exit(app.exec_())
     except SystemExit:
         print("Application closed cleanly.")
+

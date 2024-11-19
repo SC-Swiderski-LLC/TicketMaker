@@ -63,7 +63,7 @@
 1. **Create an Executable**:
    Use the following PyInstaller command to package the application:
    ```bash
-   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import win32serviceutil --hidden-import win32service --hidden-import win32event --hidden-import servicemanager ticketmaker.py
+   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." ticketmaker.py
    ```
 
 2. **Build the Installer**:
