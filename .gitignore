@@ -1,21 +1,24 @@
-# Ignore the Python installer
+# Ignore Python installer
 installer/python-3.12.7-amd64.exe
 
-# Ignore all `.exe` files in the installer folder
+# Ignore all `.exe` files
 installer/*.exe
 *.exe
 
-# Ignore all `.msi` files in the installer folder
+# Ignore all `.msi` files
 installer/*.msi
 *.msi
 
-# Ignore all `.cab` files in the installer folder
+# Ignore all `.cab` files
 installer/*.cab
 *.cab
 
 # Ignore all `dist` and `build` directories
 dist/
 build/
+
+# Ignore PyInstaller spec files
+*.spec
 
 # Ignore IDE or editor-specific files
 .vscode/
