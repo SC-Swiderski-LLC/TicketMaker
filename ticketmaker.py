@@ -252,9 +252,9 @@ class TicketCreator(QMainWindow):
             "description": description,
             "priority": priority_mapping.get(self.priority_dropdown.currentText(), 1),
             "status": status_mapping.get(self.status_dropdown.currentText(), 2),
-            "type": self.dropdown_type,
+            "type": self.dropdown_type.currentText(),
             "custom_fields": {
-                "classification": self.dropdown_classification
+                "cf_classification": self.dropdown_classification.currentText()
             } 
         }
 
@@ -301,6 +301,7 @@ class TicketCreator(QMainWindow):
         self.subject_input.clear()
         self.email_input.clear()
         self.editor.page().runJavaScript("setContent('')")
+        self.dropdown_type.setCurrentIndex(0)
         self.priority_dropdown.setCurrentIndex(0)
         self.status_dropdown.setCurrentIndex(0)
         self.attachments = []
