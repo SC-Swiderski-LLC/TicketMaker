@@ -103,6 +103,7 @@ class TicketCreator(QMainWindow):
         self.dropdown_type_label = QLabel("Ticket Type: ")
         self.layout.addWidget(self.dropdown_type_label)
         self.dropdown_type = QComboBox()
+        self.dropdown_type.addItem("")
         self.dropdown_type.addItems(["Alert", "EDR", "Problem", "Task", "Sage", "Other"])
         self.layout.addWidget(self.dropdown_type)
         self.dropdown_type.currentTextChanged.connect(self.handle_dropdown_type_change)
