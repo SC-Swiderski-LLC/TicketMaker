@@ -112,6 +112,7 @@ class TicketCreator(QMainWindow):
         self.classification_label.hide()
         self.layout.addWidget(self.classification_label)
         self.dropdown_classification = QComboBox()
+        self.dropdown_classification.addItem("") # Placeholder 
         self.dropdown_classification.addItems([
             "Intacct - Support Request",
             "Intacct - Report Issue",
@@ -240,6 +241,9 @@ class TicketCreator(QMainWindow):
         if not subject or not description or not email:
             QMessageBox.critical(self, "Error", "Subject, description, and email are required.")
             return
+        if self.dropdown_type.currentText() == "Sage" and not self.dropdown_classification.currentText():
+            QMessageBox.warning(self, "Input Error", "Classification is required when the selected Type is Sage")
+            return
 
         # Map dropdown values
         priority_mapping = {"Low": 1, "Medium": 2, "High": 3, "Urgent": 4}
@@ -312,6 +316,7 @@ class TicketCreator(QMainWindow):
         if value == "Sage":
             self.classification_label.show()
             self.dropdown_classification.show()
+            self.dropdown_classification.setCurrentIndex(0)
         else:
             self.classification_label.hide()
             self.dropdown_classification.hide()
