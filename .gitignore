@@ -5,6 +5,14 @@ installer/python-3.12.7-amd64.exe
 installer/*.exe
 *.exe
 
+# Ignore all `.msi` files in the installer folder
+installer/*.msi
+*.msi
+
+# Ignore all `.cab` files in the installer folder
+installer/*.cab
+*.cab
+
 # Ignore all `dist` and `build` directories
 dist/
 build/

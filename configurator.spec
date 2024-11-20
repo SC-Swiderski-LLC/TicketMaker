@@ -2,11 +2,11 @@
 
 
 a = Analysis(
-    ['src\\ticketmaker.py'],
+    ['src\\configurator.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets', 'assets'), ('editor.html', '.')],
-    hiddenimports=['PyQt5.QtWidgets', 'PyQt5.QtWebEngineWidgets', 'PyQt5.QtCore', 'PyQt5.QtGui'],
+    datas=[('assets', 'assets')],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='ticketmaker',
+    name='configurator',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

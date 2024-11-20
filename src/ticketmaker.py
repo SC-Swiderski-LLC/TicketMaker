@@ -17,7 +17,7 @@ import winreg
 def add_to_startup(app_name, app_path):
     """Add the application to Windows startup for the current user."""
     try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
             winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, app_path)
     except Exception as e:
         print(f"Failed to add to startup: {e}")
@@ -26,7 +26,7 @@ def add_to_startup(app_name, app_path):
 def remove_from_startup(app_name):
     """Remove the application from Windows startup."""
     try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_SET_VALUE) as key:
             winreg.DeleteValue(key, app_name)
     except FileNotFoundError:
         pass  # The app was not in startup
@@ -49,12 +49,12 @@ def get_registry_value(key, subkey, value_name):
 REGISTRY_PATH = r"SOFTWARE\\TicketMaker"
 
 # Retrieve URL and API key from the registry
-url = get_registry_value(winreg.HKEY_CURRENT_USER, REGISTRY_PATH, "URL")
-api_key = get_registry_value(winreg.HKEY_CURRENT_USER, REGISTRY_PATH, "APIKey")
+url = get_registry_value(winreg.HKEY_LOCAL_MACHINE, REGISTRY_PATH, "URL")
+api_key = get_registry_value(winreg.HKEY_LOCAL_MACHINE, REGISTRY_PATH, "API_KEY")
 
 # Validate that the values are retrieved successfully
 if not url or not api_key:
-    raise RuntimeError("URL or APIKey is missing from the registry. Please reinstall and configure TicketMaker.")
+    raise RuntimeError("URL or API_KEY is missing from the registry. Please reinstall and configure TicketMaker.")
 
 
 def resource_path(relative_path):
