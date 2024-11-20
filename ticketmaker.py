@@ -147,8 +147,15 @@ class TicketCreator(QMainWindow):
         exit_action.triggered.connect(self.exit_application)
 
         self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.activated.connect(self.show)
+        self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.show()
+
+    def tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.show()
+        elif reason == QSystemTrayIcon.Context:
+            # Do nothing, as right-click opens the menu automatically
+            pass
 
     def closeEvent(self, event):
         """Override the close event to hide the window instead of quitting."""
