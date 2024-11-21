@@ -92,7 +92,8 @@ class TicketCreator(QMainWindow):
         # Web-based editor
         self.editor = QWebEngineView()
         self.editor.setUrl(QUrl.fromLocalFile(resource_path("editor.html")))
-        self.layout.addWidget(QLabel("Description:"))
+        self.description_label = QLabel("Description:")
+        self.layout.addWidget(self.description_label)
         self.layout.addWidget(self.editor)
 
         # Enable additional WebEngine settings
@@ -229,78 +230,118 @@ class TicketCreator(QMainWindow):
         return embedded_images
 
     def create_ticket(self):
-        self.get_description_content()
+        """Validate all fields and initiate ticket creation."""
+        # Validate widget fields
+        missing_fields = []
+
+        if not self.subject_input.text().strip():
+            self.subject_label.setStyleSheet("color: red;")
+            self.subject_input.setStyleSheet("border: 2px solid red;")
+            missing_fields.append("Subject")
+        else:
+            self.subject_label.setStyleSheet("")
+            self.subject_input.setStyleSheet("")
+
+        if not self.email_input.text().strip():
+            self.email_label.setStyleSheet("color: red;")
+            self.email_input.setStyleSheet("border: 2px solid red;")
+            missing_fields.append("Email")
+        else:
+            self.email_label.setStyleSheet("")
+            self.email_input.setStyleSheet("")
+
+        if not self.dropdown_type.currentText().strip():
+            self.dropdown_type_label.setStyleSheet("color: red;")
+            self.dropdown_type.setStyleSheet("border: 2px solid red;")
+            missing_fields.append("Type")
+        else:
+            self.dropdown_type_label.setStyleSheet("")
+            self.dropdown_type.setStyleSheet("")
+
+        # Validate the Description field asynchronously
+        def validate_description(content):
+            if not content.strip():  # If Description is empty
+                self.description_label.setStyleSheet("color: red;")
+                self.editor.page().runJavaScript("document.getElementById('editor').classList.add('invalid')")
+                missing_fields.append("Description")
+            else:
+                self.description_label.setStyleSheet("")
+                self.editor.page().runJavaScript("document.getElementById('editor').classList.remove('invalid')")
+
+            # After validating all fields, either show error or proceed
+            if missing_fields:
+                QMessageBox.critical(self, "Error", f"The following fields are required:\n{', '.join(missing_fields)}")
+            else:
+                self.send_ticket()
+
+        # Fetch the Description content asynchronously and validate it
+        self.editor.page().runJavaScript("document.getElementById('editor').innerText", validate_description)
 
     def send_ticket(self):
         subject = self.subject_input.text().strip()
-        description = self.description or "No description provided"
         email = self.email_input.text().strip()
-        priority = self.priority_dropdown.currentText()
-        status = self.status_dropdown.currentText()
-
-        # Check required fields
-        if not subject or not description or not email:
-            QMessageBox.critical(self, "Error", "Subject, description, and email are required.")
-            return
-        if self.dropdown_type.currentText() == "Sage" and not self.dropdown_classification.currentText():
-            QMessageBox.warning(self, "Input Error", "Classification is required when the selected Type is Sage")
-            return
-
-        # Map dropdown values
+        ticket_type = self.dropdown_type.currentText().strip()
         priority_mapping = {"Low": 1, "Medium": 2, "High": 3, "Urgent": 4}
         status_mapping = {"Open": 2, "Pending": 3, "Resolved": 4, "Closed": 5}
+        priority = priority_mapping.get(self.priority_dropdown.currentText(), 1)
+        status = status_mapping.get(self.status_dropdown.currentText(), 2)
 
-        # API payload
-        data = {
-            "email": self.email_input.text().strip(),
-            "subject": self.subject_input.text().strip(),
-            "description": description,
-            "priority": priority_mapping.get(self.priority_dropdown.currentText(), 1),
-            "status": status_mapping.get(self.status_dropdown.currentText(), 2),
-            "type": self.dropdown_type.currentText(),
-            "custom_fields": {
-                "cf_classification": self.dropdown_classification.currentText()
-            } 
-        }
+        def handle_description(description_content):
+            description = description_content.strip() or "No description provided"
 
-        try:
-            files = [
-                ("attachments[]", (os.path.basename(f), open(f, "rb")))
-                for f in self.attachments
-            ]
-            files.extend([
-                ("attachments[]", (os.path.basename(f), open(f, "rb")))
-                for f in self.embedded_images
-            ])
+            # API payload
+            data = {
+                "email": self.email_input.text().strip(),
+                "subject": self.subject_input.text().strip(),
+                "description": description_content.strip() or "No description provided.",
+                "priority": priority_mapping.get(self.priority_dropdown.currentText(), 1),
+                "status": status_mapping.get(self.status_dropdown.currentText(), 2),
+                "type": self.dropdown_type.currentText(),
+                "custom_fields": {
+                    "cf_classification": self.dropdown_classification.currentText()
+                } 
+            }
 
-            if files:
-                response = requests.post(
-                    f"{url}/api/v2/tickets",
-                    data=data,
-                    files=files,
-                    auth=(api_key, "X")
-                )
-                for _, f in files:
-                    f[1].close()
-                for file_path in self.embedded_images:
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-            else:
-                headers = {"Content-Type": "application/json"}
-                response = requests.post(
-                    f"{url}/api/v2/tickets",
-                    headers=headers,
-                    json=data,
-                    auth=(api_key, "X")
-                )
+            try:
+                files = [
+                    ("attachments[]", (os.path.basename(f), open(f, "rb")))
+                    for f in self.attachments
+                ]
+                files.extend([
+                    ("attachments[]", (os.path.basename(f), open(f, "rb")))
+                    for f in self.embedded_images
+                ])
 
-            if response.status_code == 201:
-                QMessageBox.information(self, "Success", "Ticket created successfully!")
-                self.clear_fields()
-            else:
-                QMessageBox.critical(self, "Error", f"Failed to create ticket. Status code: {response.status_code}\nResponse: {response.text}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred: {e}")
+                if files:
+                    response = requests.post(
+                        f"{url}/api/v2/tickets",
+                        data=data,
+                        files=files,
+                        auth=(api_key, "X")
+                    )
+                    for _, f in files:
+                        f[1].close()
+                    for file_path in self.embedded_images:
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                else:
+                    headers = {"Content-Type": "application/json"}
+                    response = requests.post(
+                        f"{url}/api/v2/tickets",
+                        headers=headers,
+                        json=data,
+                        auth=(api_key, "X")
+                    )
+
+                if response.status_code == 201:
+                    QMessageBox.information(self, "Success", "Ticket created successfully!")
+                    self.clear_fields()
+                else:
+                    QMessageBox.critical(self, "Error", f"Failed to create ticket. Status code: {response.status_code}\nResponse: {response.text}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"An error occurred: {e}")
+
+        self.editor.page().runJavaScript("document.getElementById('editor').innerText", handle_description)
 
     def clear_fields(self):
         self.subject_input.clear()
@@ -312,6 +353,15 @@ class TicketCreator(QMainWindow):
         self.attachments = []
         self.embedded_images = []
         self.attachment_label.setText("Attachments:")
+
+        self.subject_label.setStyleSheet("")
+        self.subject_input.setStyleSheet("")
+        self.email_label.setStyleSheet("")
+        self.email_input.setStyleSheet("")
+        self.dropdown_type_label.setStyleSheet("")
+        self.dropdown_type.setStyleSheet("")
+        self.description_label.setStyleSheet("")
+        self.editor.page().runJavaScript("document.getElementById('editor').classList.remove('invalid')")
 
     def handle_dropdown_type_change(self, value):
         if value == "Sage":
