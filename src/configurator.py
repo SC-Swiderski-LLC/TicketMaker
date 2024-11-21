@@ -16,6 +16,18 @@ def save_to_registry(api_url, api_key):
         messagebox.showerror("Error", f"Failed to write to the registry: {e}")
         return False
 
+def handle_cli_args():
+    """Process CLI arguments for direct registry update."""
+    if len(sys.argv) >= 3:
+        api_url = sys.argv[1]
+        api_key = sys.argv[2]
+
+        if save_to_registry(api_url, api_key):
+            print("API URL and Key saved successfully via CLI.")
+        else:
+            print("Failed to save API URL and Key via CLI.")
+        sys.exit(0)
+
 def submit():
     api_url = url_entry.get()
     api_key = key_entry.get()
@@ -48,6 +60,9 @@ def set_placeholder(entry, placeholder_text):
 
     entry.bind("<FocusIn>", on_focus_in)
     entry.bind("<FocusOut>", on_focus_out)
+
+# Handle CLI arguments for silent updates
+handle_cli_args()
 
 # Determine the path to the icon
 if hasattr(sys, "_MEIPASS"):

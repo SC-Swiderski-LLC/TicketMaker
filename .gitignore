@@ -5,6 +5,9 @@ installer/python-3.12.7-amd64.exe
 installer/*.exe
 *.exe
 
+# Allow configurator.exe in the dist folder
+!dist/configurator.exe
+
 # Ignore all `.msi` files
 installer/*.msi
 *.msi
@@ -13,8 +16,11 @@ installer/*.msi
 installer/*.cab
 *.cab
 
-# Ignore all `dist` and `build` directories
+# Ignore all `dist` and `build` directories except README.md and configurator.exe
 dist/
+!dist/configurator.exe
+!dist/README.md
+
 build/
 
 # Ignore PyInstaller spec files
