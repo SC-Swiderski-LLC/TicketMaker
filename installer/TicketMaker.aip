@@ -3,21 +3,26 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
     <ROW Property="AI_APP_FILE" Value="[#ticketmaker.exe]"/>
     <ROW Property="AI_BITMAP_DISPLAY_MODE" Value="0"/>
+    <ROW Property="AI_CF_FRAME_STYLE" Value="FlatCaption;FlatBorder;NoInactive" MultiBuildValue="DefaultBuild:true;true;true" MsiKey="AI_CF_FRAME_STYLE"/>
     <ROW Property="ALLUSERS" Value="1"/>
     <ROW Property="API_KEY" Value="Your Freshdesk account API Key"/>
     <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
+    <ROW Property="ARPHELPLINK" Value="https://github.com/orgs/TicketMaker-Community-Project/discussions"/>
     <ROW Property="ARPPRODUCTICON" Value="ticketmaker.exe" Type="8"/>
+    <ROW Property="ARPURLINFOABOUT" Value="https://github.com/TicketMaker-Community-Project/TicketMaker/issues"/>
+    <ROW Property="ARPURLUPDATEINFO" Value="https://github.com/TicketMaker-Community-Project/TicketMaker/releases"/>
     <ROW Property="AiEmbeddedUI" Value="1"/>
+    <ROW Property="AiLicenseAgreementLink" Value="https://github.com/TicketMaker-Community-Project/TicketMaker?tab=MIT-1-ov-file#readme"/>
     <ROW Property="AiSkipExitDlg" Value="1" Type="4" MsiKey="AiSkipExitDlg"/>
     <ROW Property="AiWinUI" Value="1"/>
     <ROW Property="AppLogoIcon" Value="applogo.png" MultiBuildValue="DefaultBuild:installer_icon.bmp" Type="1" MsiKey="AppLogoIcon"/>
     <ROW Property="AppLogoIconDark" Value="applogodark.png" MultiBuildValue="DefaultBuild:installer_icon.bmp" Type="1" MsiKey="AppLogoIconDark"/>
     <ROW Property="CTRLS" Value="2"/>
     <ROW Property="Manufacturer" Value="TicketMaker Community Project"/>
-    <ROW Property="ProductCode" Value="1033:{C44E3112-34E2-4254-BDB8-00DAE2DCC6AD} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{193ADC04-D5E6-4EBF-A1F6-91E8812F56BC} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="TicketMaker"/>
-    <ROW Property="ProductVersion" Value="0.3.1" Options="4"/>
+    <ROW Property="ProductVersion" Value="0.3.2" Options="4"/>
     <ROW Property="REBOOT" MultiBuildValue="DefaultBuild:ReallySuppress"/>
     <ROW Property="RUN_CONFIGURATOR" Value="1"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
@@ -39,6 +44,7 @@
     <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
     <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
     <ROW Directory="assets_Dir" Directory_Parent="APPDIR" DefaultDir="assets"/>
+    <ROW Directory="scripts_Dir" Directory_Parent="APPDIR" DefaultDir="scripts"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.SideBySideGuidComponent">
     <ROW Component="APPDIR" Value="{67125CBF-AD5D-42C2-B085-70B8CBB940A8}"/>
@@ -53,6 +59,7 @@
     <ROW Component="URL" ComponentId="{7EFC74A4-3EF8-46F0-B013-F1F11104788B}" Directory_="APPDIR" Attributes="260" KeyPath="URL"/>
     <ROW Component="configurator.exe" ComponentId="{6E638605-BB2C-4697-A02F-8DBFEC89287F}" Directory_="APPDIR" Attributes="256" KeyPath="configurator.exe"/>
     <ROW Component="icon.ico" ComponentId="{590B50FB-57D7-425C-B9AC-01FA08165262}" Directory_="assets_Dir" Attributes="0" KeyPath="icon.ico" Type="0"/>
+    <ROW Component="regkey_logic.ps1" ComponentId="{EDD3715D-F671-47DF-8D89-C3E1825AC8CD}" Directory_="scripts_Dir" Attributes="0" KeyPath="regkey_logic.ps1" Type="0"/>
     <ROW Component="ticketmaker.exe" ComponentId="{BFBB9B12-600B-40E3-9BF6-9CB3D5ED05C6}" Directory_="APPDIR" Attributes="256" KeyPath="ticketmaker.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
@@ -64,6 +71,7 @@
     <ROW File="icon.ico" Component_="icon.ico" FileName="icon.ico" Attributes="0" SourcePath="assets\icon.ico" SelfReg="false"/>
     <ROW File="splash_logo.png" Component_="icon.ico" FileName="SPLASH~1.PNG|splash_logo.png" Attributes="0" SourcePath="..\assets\splash_logo.png" SelfReg="false"/>
     <ROW File="configurator.exe" Component_="configurator.exe" FileName="CONFIG~1.EXE|configurator.exe" Attributes="0" SourcePath="..\dist\configurator.exe" SelfReg="false" DigSign="true"/>
+    <ROW File="regkey_logic.ps1" Component_="regkey_logic.ps1" FileName="REGKEY~1.PS1|regkey_logic.ps1" Attributes="0" SourcePath="regkey_logic.ps1" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -181,6 +189,7 @@
     <ROW Feature_="MainFeature" Component_="Path"/>
     <ROW Feature_="MainFeature" Component_="configurator.exe"/>
     <ROW Feature_="MainFeature" Component_="SHORTCUTDIR"/>
+    <ROW Feature_="MainFeature" Component_="regkey_logic.ps1"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiIconsComponent">
     <ROW Name="ticketmaker.exe" SourcePath="..\assets\icon.ico" Index="0"/>
