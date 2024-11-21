@@ -52,4 +52,4 @@ Start-Process -FilePath "C:\Path\To\configurator.exe" -ArgumentList '"https://ex
 - Always verify the provided Freshdesk URL and API key for accuracy before applying changes.
 
 `configurator.exe` is a valuable addition to IT toolkits, simplifying the management of critical application settings with its dual interactive and command-line capabilities.
-```
+
