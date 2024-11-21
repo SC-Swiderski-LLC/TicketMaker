@@ -4,8 +4,7 @@
 
 ## Overview
 
-**TicketMaker** is a Python application designed to simplify creating support tickets in a Freshdesk system. This repository contains the full version of the application:
-
+**TicketMaker** is a standalone Windows application designed to simplify creating support tickets in a Freshdesk system. This repository contains the full version of the application.
 
 ### Features
 
@@ -16,6 +15,7 @@
 - **Dropdown Options**: Predefined dropdowns for Priority and Status fields.
 - **Validation**: Ensures all required fields are filled before submission.
 - **Secure API Integration**: Communicates with the Freshdesk API for ticket creation.
+- **Interactive and Silent Install Support**: Install the application interactively with user prompts or silently for automated deployments.
 
 ### How It Works
 
@@ -34,11 +34,29 @@
 
    ![Full Version Screenshot](images/successmessage.png)
 
-3. **Clear Form**:
+3. **Interactive API Configuration**:
+   - During installation, the **Configurator** application is launched in interactive mode to collect your Freshdesk API URL and API key.
+   - These values are stored securely in the system registry.
+   - The **Configurator** can also be run manually to reset the API configuration if needed.
+
+4. **Silent Installation**:
+   - TicketMaker supports silent installs for automated deployments. Use the following command in PowerShell to install the application without prompts:
+     ```powershell
+     msiexec /i "C:\Github\TicketMaker\TicketMakerInstaller.msi" /quiet /log "C:\TicketMakerInstall.log" URL="https://example.com" API_KEY="12345"
+     ```
+
+5. **Clear Form**:
    - The fields are reset after successful submission.
    - Embedded images saved during processing are automatically cleaned up.
 
+---
+
 ## Installation
+
+### Requirements
+
+- 64-bit Windows operating system.
+- **No Python installation required**—TicketMaker is packaged as a standalone executable.
 
 ### Common Steps
 
@@ -48,36 +66,49 @@
    cd TicketMaker
    ```
 
-2. **Install Dependencies**:
-   Ensure you have Python 3.x installed and install the required libraries:
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. **Installer**:
+   - Download the installer `.msi` file.
+   - Run the installer interactively or use the silent install command for automated setups.
 
-3. **Configure API Settings**:
-   - The installer will prompt you to enter your Freshdesk domain and API key during installation.
-   - These values will be stored in the system registry for use by the application.
+---
 
-### Packaging the Application
+## Packaging the Application
 
-1. **Create an Executable**:
-   Use the following PyInstaller command to package the application:
-   ```bash
-   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import PyQt5.QtWidgets --hidden-import PyQt5.QtWebEngineWidgets --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui ticketmaker.py
+### Creating an Executable
 
-   ```
+#### TicketMaker
 
-2. **Build the Installer**:
-   Use the provided `TicketMakerInstaller.iss` Inno Setup script in the installer folder to compile the installer for distribution.
-   
-   - Place the `ticketmaker.exe` from the `dist` folder into the the `installer` folder.
-   - Run the Inno Setup script to compile into the installer.
+Use the following PyInstaller command to package the `ticketmaker.py` application:
+
+```bash
+pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import PyQt5.QtWidgets --hidden-import PyQt5.QtWebEngineWidgets --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui src/ticketmaker.py
+```
+
+#### Configurator
+
+Use the following PyInstaller command to package the `configurator.py` application:
+
+```bash
+pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" src/configurator.py
+```
+
+### Building the Installer
+
+TicketMaker is packaged using **Advanced Installer** under its open-source developer license. This ensures professional-grade installation features.
+
+---
 
 ## Notes
 
 - Ensure your Freshdesk API key has the necessary permissions to create tickets.
 - Use HTTPS for secure communication with the Freshdesk API.
 - Embedded images in the rich text editor will be extracted and attached automatically.
+
+## Credits
+
+- **Support Ticket Icon**: <a href="https://www.flaticon.com/free-icons/support-ticket" title="support ticket icons">Support ticket icons created by syafii5758 - Flaticon</a>
+- **Advanced Installer**: The installer was built using **Advanced Installer** under their open-source developer license. Learn more at [advancedinstaller.com](https://www.advancedinstaller.com).
+
 
 ## Contributing
 
