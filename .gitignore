@@ -14,13 +14,11 @@ installer/*.msi
 installer/*.cab
 *.cab
 
-# Ignore TicketMaker-cache folder and its contents
-TicketMaker-cache/
-TicketMaker-cache/*
-
-# Allow specific files in TicketMaker-cache if needed
-!TicketMaker-cache/cacheindex.txt
-!TicketMaker-cache/output-infi.ini
+# Ignore TicketMaker-related folders inside the installer directory
+installer/TicketMaker-cache/
+installer/TicketMaker-cache/*
+installer/TicketMaker-SetupFiles/
+installer/TicketMaker-SetupFiles/*
 
 # Ignore all generated directories except specific files
 dist/
