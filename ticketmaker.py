@@ -241,7 +241,7 @@ class TicketCreator(QMainWindow):
         return embedded_images
 
     def send_ticket(self):
-        """Send the ticket data to the Freshdesk API with attachments."""
+        """Send the ticket data to the Freshdesk API with or without attachments."""
         try:
             # Prepare ticket details
             subject = self.subject_input.text().strip()
@@ -254,30 +254,40 @@ class TicketCreator(QMainWindow):
                 QMessageBox.critical(self, "Error", "Subject and Email are required!")
                 return
 
-            # Prepare ticket data for multipart/form-data
+            # Prepare ticket data
             data = {
                 "email": email,
                 "subject": subject,
                 "description": description,
-                "priority": str(priority),  # Strings for multipart/form-data
-                "status": str(status)
+                "priority": priority,  # Keep as integer
+                "status": status       # Keep as integer
             }
 
             # Prepare attachments
             files = []
-            for f in self.attachments:
-                try:
-                    files.append(("attachments[]", (os.path.basename(f), open(f, "rb"))))
-                except Exception as e:
-                    QMessageBox.warning(self, "Warning", f"Could not open attachment: {f}\n{e}")
+            has_attachments = bool(self.attachments or self.embedded_images)
+            try:
+                # Add user-selected files
+                for attachment in self.attachments:
+                    files.append(("attachments[]", (os.path.basename(attachment), open(attachment, "rb"))))
 
-            for f in self.embedded_images:
-                try:
-                    files.append(("attachments[]", (os.path.basename(f), open(f, "rb"))))
-                except Exception as e:
-                    QMessageBox.warning(self, "Warning", f"Could not open embedded image: {f}\n{e}")
+                # Add embedded images as attachments
+                for idx, embedded_image in enumerate(self.embedded_images):
+                    file_name = f"embedded_image_{idx + 1}.png"
 
-            # Prepare API headers
+                    # Fix padding for the base64 string
+                    missing_padding = len(embedded_image) % 4
+                    if missing_padding != 0:
+                        embedded_image += "=" * (4 - missing_padding)
+
+                    with open(file_name, "wb") as img_file:
+                        img_file.write(base64.b64decode(embedded_image))
+                    files.append(("attachments[]", (file_name, open(file_name, "rb"))))
+            except Exception as e:
+                QMessageBox.warning(self, "Warning", f"Could not process attachments or embedded images:\n{e}")
+                return
+
+            # API headers
             credentials = f"{self.config['api_key']}:X"
             encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
             headers = {
@@ -288,97 +298,70 @@ class TicketCreator(QMainWindow):
             api_url = f"https://{self.config['api_url'].rstrip('/')}/api/v2/tickets"
 
             # Send API request
-            response = requests.post(api_url, headers=headers, data=data, files=files)
+            if has_attachments:
+                # Use multipart/form-data for attachments
+                response = requests.post(api_url, headers=headers, data=data, files=files)
+            else:
+                # Use application/json for text-only tickets
+                headers["Content-Type"] = "application/json"
+                response = requests.post(api_url, headers=headers, json=data)
 
-            # Cleanup embedded images
+            # Cleanup embedded images and file handles
             for file_path in self.embedded_images:
                 try:
                     os.remove(file_path)
                 except Exception:
                     pass
+            for _, (_, file_handle) in files:
+                file_handle.close()
 
             # Handle API response
             if response.status_code == 201:
                 QMessageBox.information(self, "Success", "Ticket created successfully!")
                 self.clear_fields()
             else:
-                error_message = response.json().get("message", "Unknown error")
+                error_message = response.json().get("message", response.text)
                 QMessageBox.critical(self, "Error", f"Failed to create ticket: {error_message}")
-
-            # Close file handles
-            for _, (_, file_handle) in files:
-                file_handle.close()
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred while creating the ticket: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="TicketMaker")
-    parser.add_argument("--config", action="store_true", help="Launch configuration window")
-    parser.add_argument("--subject", type=str, help="Subject of the ticket")
-    parser.add_argument("--email", type=str, help="Your email address")
-    parser.add_argument("--description", type=str, help="Description of the ticket")
-    parser.add_argument("--priority", type=int, choices=[1, 2, 3, 4], help="Priority (1=Low, 2=Medium, 3=High, 4=Urgent)")
-    parser.add_argument("--status", type=int, choices=[2, 3, 4, 5], help="Status (2=Open, 3=Pending, 4=Resolved, 5=Closed)")
-    parser.add_argument("--attachments", nargs="*", help="File paths for attachments")
-    args = parser.parse_args()
+    import traceback
 
     app = QApplication(sys.argv)
 
     try:
-        config = setup_config(args)
+        # Load configuration
+        config = setup_config(argparse.Namespace(config=False))
         if not config:
-            QMessageBox.critical(None, "Error", "Configuration setup failed. Exiting.")
+            QMessageBox.critical(None, "Error", "No configuration found. Please set up the app.")
             sys.exit(1)
 
-        # CLI Ticket Creation
-        if args.subject and args.email and args.description:
-            print("Creating ticket from CLI...")
-            data = {
-                "email": args.email,
-                "subject": args.subject,
-                "description": args.description,
-                "priority": args.priority or 1,
-                "status": args.status or 2
-            }
-            files = []
-            if args.attachments:
-                for f in args.attachments:
-                    try:
-                        files.append(("attachments[]", (os.path.basename(f), open(f, "rb"))))
-                    except Exception as e:
-                        print(f"Error with attachment {f}: {e}")
-                        sys.exit(1)
-
-            # Send ticket
-            api_url = f"https://{config['api_url'].rstrip('/')}/api/v2/tickets"
-            credentials = f"{config['api_key']}:X"
-            encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
-            headers = {"Authorization": f"Basic {encoded_credentials}"}
-
-            response = requests.post(api_url, headers=headers, data=data, files=files)
-            if response.status_code == 201:
-                print("Ticket created successfully!")
-            else:
-                print(f"Failed to create ticket: {response.text}")
-
-            # Cleanup
-            for _, (_, file_handle) in files:
-                file_handle.close()
-
-            sys.exit(0)
-
-        # GUI Launch
+        # Show splash screen
         splash_pix = QPixmap(resource_path("assets/splash_logo.png"))
         splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
         splash.setWindowFlag(Qt.FramelessWindowHint)
         splash.show()
+
+        # Launch the main window
         window = TicketCreator(config)
         splash.finish(window)
         window.show()
     except Exception as e:
-        QMessageBox.critical(None, "Error", f"An error occurred:\n{str(e)}")
+        # Log and display any unexpected errors
+        error_details = traceback.format_exc()
+        print(f"Critical Error: {error_details}")
+        QMessageBox.critical(None, "Critical Error", f"An unexpected error occurred:\n\n{error_details}")
         sys.exit(1)
 
-    sys.exit(app.exec_())
+    # Start the app
+    try:
+        sys.exit(app.exec_())
+    except Exception as e:
+        error_details = traceback.format_exc()
+        print(f"Runtime Error: {error_details}")
+        QMessageBox.critical(None, "Critical Error", f"A fatal error occurred during app execution:\n\n{error_details}")
+        sys.exit(1)
+
 
