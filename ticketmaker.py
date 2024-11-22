@@ -182,6 +182,14 @@ class TicketCreator(QMainWindow):
         )
 
     def exit_application(self):
+        """Exit the application cleanly and remove the config file for portability."""
+        try:
+            if os.path.exists(CONFIG_PATH):
+                os.remove(CONFIG_PATH)
+                print(f"Configuration file {CONFIG_PATH} removed.")
+        except Exception as e:
+            print(f"Failed to remove configuration file: {e}")
+        
         self.tray_icon.hide()
         QApplication.quit()
 
@@ -307,6 +315,12 @@ class TicketCreator(QMainWindow):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TicketMaker")
     parser.add_argument("--config", action="store_true", help="Launch configuration window")
+    parser.add_argument("--subject", type=str, help="Subject of the ticket")
+    parser.add_argument("--email", type=str, help="Your email address")
+    parser.add_argument("--description", type=str, help="Description of the ticket")
+    parser.add_argument("--priority", type=int, choices=[1, 2, 3, 4], help="Priority (1=Low, 2=Medium, 3=High, 4=Urgent)")
+    parser.add_argument("--status", type=int, choices=[2, 3, 4, 5], help="Status (2=Open, 3=Pending, 4=Resolved, 5=Closed)")
+    parser.add_argument("--attachments", nargs="*", help="File paths for attachments")
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
@@ -316,6 +330,45 @@ if __name__ == "__main__":
         if not config:
             QMessageBox.critical(None, "Error", "Configuration setup failed. Exiting.")
             sys.exit(1)
+
+        # CLI Ticket Creation
+        if args.subject and args.email and args.description:
+            print("Creating ticket from CLI...")
+            data = {
+                "email": args.email,
+                "subject": args.subject,
+                "description": args.description,
+                "priority": args.priority or 1,
+                "status": args.status or 2
+            }
+            files = []
+            if args.attachments:
+                for f in args.attachments:
+                    try:
+                        files.append(("attachments[]", (os.path.basename(f), open(f, "rb"))))
+                    except Exception as e:
+                        print(f"Error with attachment {f}: {e}")
+                        sys.exit(1)
+
+            # Send ticket
+            api_url = f"https://{config['api_url'].rstrip('/')}/api/v2/tickets"
+            credentials = f"{config['api_key']}:X"
+            encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+            headers = {"Authorization": f"Basic {encoded_credentials}"}
+
+            response = requests.post(api_url, headers=headers, data=data, files=files)
+            if response.status_code == 201:
+                print("Ticket created successfully!")
+            else:
+                print(f"Failed to create ticket: {response.text}")
+
+            # Cleanup
+            for _, (_, file_handle) in files:
+                file_handle.close()
+
+            sys.exit(0)
+
+        # GUI Launch
         splash_pix = QPixmap(resource_path("assets/splash_logo.png"))
         splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
         splash.setWindowFlag(Qt.FramelessWindowHint)
@@ -328,3 +381,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     sys.exit(app.exec_())
+
