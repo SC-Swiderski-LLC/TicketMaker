@@ -3,6 +3,7 @@ import os
 import json
 import re
 import base64
+import winreg
 import requests
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QComboBox,
@@ -11,10 +12,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, Qt
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QPalette, QColor
 from freshdesk.api import API  # Add this here
 import argparse
-
 
 # Paths and Constants
 CONFIG_PATH = os.path.expandvars(r"%PROGRAMDATA%\TicketMaker\config.json")
@@ -83,6 +83,17 @@ def setup_config(args):
 
     return config
 
+def is_windows_dark_mode():
+    """Detect if Windows is in dark mode."""
+    try:
+        reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                 r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+        use_light_theme, _ = winreg.QueryValueEx(reg_key, "AppsUseLightTheme")
+        return use_light_theme == 0
+    except Exception as e:
+        print(f"Dark mode detection failed: {e}")
+        return False
+
 
 # Main App Class
 class TicketCreator(QMainWindow):
@@ -90,7 +101,11 @@ class TicketCreator(QMainWindow):
         super().__init__()
         self.config = config
         self.attachments = []
-        self.embedded_images = []
+        self.init_ui()
+        self.apply_theme()
+
+    def init_ui(self):
+        """Set up the UI."""
         self.setWindowTitle("TicketMaker")
         self.setGeometry(100, 100, 800, 850)
         self.setWindowIcon(QIcon(resource_path("assets/icon.ico")))
@@ -110,37 +125,36 @@ class TicketCreator(QMainWindow):
         self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.show()
 
-        # Main Layout and Widgets
         central_widget = QWidget()
         layout = QVBoxLayout()
 
-        # Subject
+        # Subject Field
         layout.addWidget(QLabel("Subject:"))
         self.subject_input = QLineEdit(placeholderText="Enter the ticket subject here")
         layout.addWidget(self.subject_input)
 
-        # Email field
+        # Email Field
         layout.addWidget(QLabel("Your Email:"))
         self.email_input = QLineEdit(placeholderText="Enter your email address")
         layout.addWidget(self.email_input)
 
-        # Editor
+        # Rich Text Editor
+        layout.addWidget(QLabel("Description:"))
         self.editor = QWebEngineView()
         editor_path = resource_path("editor.html")
         if os.path.exists(editor_path):
             self.editor.setUrl(QUrl.fromLocalFile(editor_path))
         else:
             self.editor.setHtml("<h3>Editor file not found</h3>")
-        layout.addWidget(QLabel("Description:"))
         layout.addWidget(self.editor)
 
-        # Priority dropdown
+        # Priority Dropdown
         layout.addWidget(QLabel("Priority:"))
         self.priority_dropdown = QComboBox()
         self.priority_dropdown.addItems(["Low", "Medium", "High", "Urgent"])
         layout.addWidget(self.priority_dropdown)
 
-        # Status dropdown
+        # Status Dropdown
         layout.addWidget(QLabel("Status:"))
         self.status_dropdown = QComboBox()
         self.status_dropdown.addItems(["Open", "Pending", "Resolved", "Closed"])
@@ -158,14 +172,94 @@ class TicketCreator(QMainWindow):
         self.submit_button.clicked.connect(self.create_ticket)
         layout.addWidget(self.submit_button)
 
-        # Clear Fields Button
+        # Clear Button
         self.clear_button = QPushButton("Clear Fields")
         self.clear_button.clicked.connect(self.clear_fields)
         layout.addWidget(self.clear_button)
 
-        # Set the layout for the central widget
+        # Set Main Layout
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
+
+    def apply_theme(self):
+        """Apply dark or light theme based on OS settings."""
+        app = QApplication.instance()
+        is_dark_mode = is_windows_dark_mode()
+
+        # Set PyQt dark palette
+        palette = QPalette()
+        if is_dark_mode:
+            palette.setColor(QPalette.Window, QColor("#2b2b2b"))
+            palette.setColor(QPalette.WindowText, QColor("#ffffff"))
+            palette.setColor(QPalette.Base, QColor("#1e1e1e"))
+            palette.setColor(QPalette.Text, QColor("#d4d4d4"))
+            palette.setColor(QPalette.Button, QColor("#3c3c3c"))
+            palette.setColor(QPalette.ButtonText, QColor("#ffffff"))
+
+            # Apply styles to specific widgets
+            self.subject_input.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            self.email_input.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            self.priority_dropdown.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            self.status_dropdown.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            self.attachment_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
+            self.submit_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
+            self.clear_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
+
+            # Dark mode for QMessageBox
+            app.setStyleSheet("""
+                QMessageBox {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QMessageBox QLabel {
+                    color: #ffffff;
+                }
+                QMessageBox QPushButton {
+                    background-color: #3c3c3c;
+                    color: #ffffff;
+                    border: 1px solid #555;
+                }
+                QMessageBox QPushButton:hover {
+                    background-color: #555;
+                }
+            """)
+
+        else:
+            palette = app.style().standardPalette()
+            self.subject_input.setStyleSheet("")
+            self.email_input.setStyleSheet("")
+            self.priority_dropdown.setStyleSheet("")
+            self.status_dropdown.setStyleSheet("")
+            self.attachment_button.setStyleSheet("")
+            self.submit_button.setStyleSheet("")
+            self.clear_button.setStyleSheet("")
+
+            # Light mode for QMessageBox
+            app.setStyleSheet("""
+                QMessageBox {
+                    background-color: #ffffff;
+                    color: #000000;
+                }
+                QMessageBox QLabel {
+                    color: #000000;
+                }
+                QMessageBox QPushButton {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                    border: 1px solid #ccc;
+                }
+                QMessageBox QPushButton:hover {
+                    background-color: #e0e0e0;
+                }
+            """)
+
+        app.setPalette(palette)
+
+        # Wait for the editor page to load before applying dark mode
+        def set_editor_mode():
+            self.editor.page().runJavaScript(f"setDarkMode({str(is_dark_mode).lower()});")
+
+        self.editor.page().loadFinished.connect(set_editor_mode)
 
     def tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
@@ -363,5 +457,3 @@ if __name__ == "__main__":
         print(f"Runtime Error: {error_details}")
         QMessageBox.critical(None, "Critical Error", f"A fatal error occurred during app execution:\n\n{error_details}")
         sys.exit(1)
-
-
