@@ -1,10 +1,9 @@
-
 param (
     [switch]$Add,
     [switch]$Retrieve,
     [switch]$Delete,
-    [string]$Url,
-    [string]$ApiKey
+    [string]$Url = "https://default-freshdesk-url.com", # Hard-coded default URL
+    [string]$ApiKey = "DefaultAPIKey123"               # Hard-coded default API Key
 )
 
 # Define credential names
@@ -61,11 +60,10 @@ function Delete-Credentials {
 
 # Main logic
 if ($Add) {
-    if (-not $Url -or -not $ApiKey) {
-        Write-Host "Both -Url and -ApiKey parameters are required when using -Add."
-    } else {
-        Add-Credentials -Url $Url -ApiKey $ApiKey
+    if (-not $PSBoundParameters.ContainsKey('Url') -or -not $PSBoundParameters.ContainsKey('ApiKey')) {
+        Write-Host "Using hard-coded defaults for URL and API Key."
     }
+    Add-Credentials -Url $Url -ApiKey $ApiKey
 } elseif ($Retrieve) {
     Retrieve-Credentials
 } elseif ($Delete) {
