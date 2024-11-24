@@ -4,7 +4,9 @@ import json
 import re
 import base64
 import winreg
-import requests
+import win32cred
+import subprocess
+import logging
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QComboBox,
     QPushButton, QWidget, QMessageBox, QFileDialog, QSystemTrayIcon, QMenu,
@@ -13,75 +15,49 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtGui import QIcon, QPixmap, QPalette, QColor
-from freshdesk.api import API  # Add this here
-import argparse
+from freshdesk.api import API
+from cryptography.fernet import Fernet
+import requests
 
-# Paths and Constants
-CONFIG_PATH = os.path.expandvars(r"%PROGRAMDATA%\TicketMaker\config.json")
+# Set up logging
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
-
-# Utility Functions
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and PyInstaller."""
-    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_path, relative_path)
+    base_path = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
+    resolved_path = os.path.join(base_path, relative_path)
+    if not os.path.exists(resolved_path):
+        raise FileNotFoundError(f"Resource not found: {resolved_path}")
+    return resolved_path
 
-
-def load_config():
-    """Load configuration from JSON."""
+def get_credential(credential_name):
+    """Retrieve a credential from Windows Credential Manager."""
     try:
-        if os.path.exists(CONFIG_PATH):
-            with open(CONFIG_PATH, "r") as file:
-                return json.load(file)
-    except Exception as e:
-        print(f"Error loading configuration: {e}")
-    return None
-
-
-def save_config(api_url, api_key):
-    """Save configuration to JSON in a readable format."""
-    try:
-        os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
-        with open(CONFIG_PATH, "w") as file:
-            json.dump({"api_url": api_url, "api_key": api_key}, file, indent=4)  # Add indent for pretty-printing
-        print(f"Configuration saved to {CONFIG_PATH}")
-    except Exception as e:
-        print(f"Error saving configuration: {e}")
-
-
-def run_configurator():
-    """Prompt user for API URL and Key."""
-    try:
-        app = QApplication.instance() or QApplication(sys.argv)
-        api_url, ok_url = QInputDialog.getText(None, "Configuration", "Enter API URL:")
-        if not ok_url or not api_url.strip():
-            QMessageBox.warning(None, "Error", "API URL is required!")
+        # Retrieve the credential from Windows Credential Manager
+        credential = win32cred.CredRead(credential_name, win32cred.CRED_TYPE_GENERIC)
+        if credential:
+            return credential['CredentialBlob'].decode()
+        else:
+            logger.warning(f"Credential {credential_name} not found.")
             return None
-
-        api_key, ok_key = QInputDialog.getText(None, "Configuration", "Enter API Key:")
-        if not ok_key or not api_key.strip():
-            QMessageBox.warning(None, "Error", "API Key is required!")
-            return None
-
-        save_config(api_url.strip(), api_key.strip())
-        return {"api_url": api_url.strip(), "api_key": api_key.strip()}
     except Exception as e:
-        print(f"Error in configurator: {e}")
+        logger.error(f"Error retrieving credential {credential_name}: {e}")
         return None
 
+# Retrieve the Freshdesk URL and API Key
+url = get_credential("TicketMaker_FreshdeskURL")
+api_key = get_credential("TicketMaker_APIKey")
 
-def setup_config(args):
-    """Main configuration setup."""
-    if args.config:
-        print("Running configurator...")
-        return run_configurator()
-
-    config = load_config()
-    if not config:
-        print("No configuration found. Launching configurator...")
-        return run_configurator()
-
-    return config
+if url and api_key:
+    logger.info(f"Freshdesk URL: {url}")
+    logger.info(f"Freshdesk API Key: {api_key}")
+else:
+    logger.critical("Failed to retrieve Freshdesk credentials. Exiting.")
+    sys.exit(1)  # Exit the app if credentials are missing
 
 def is_windows_dark_mode():
     """Detect if Windows is in dark mode."""
@@ -91,9 +67,25 @@ def is_windows_dark_mode():
         use_light_theme, _ = winreg.QueryValueEx(reg_key, "AppsUseLightTheme")
         return use_light_theme == 0
     except Exception as e:
-        print(f"Dark mode detection failed: {e}")
+        logger.warning(f"Dark mode detection failed: {e}")
         return False
+    
+def sanitize_credential(credential):
+    """Clean up credentials by removing unexpected characters."""
+    return credential.strip().replace("\x00", "")
 
+# Retrieve and sanitize Freshdesk URL and API Key
+url = get_credential("TicketMaker_FreshdeskURL")
+api_key = get_credential("TicketMaker_APIKey")
+
+if url and api_key:
+    url = sanitize_credential(url)
+    api_key = sanitize_credential(api_key)
+    logger.info(f"Freshdesk URL: {url}")
+    logger.info(f"Freshdesk API Key: {api_key}")
+else:
+    logger.critical("Failed to retrieve Freshdesk credentials. Exiting.")
+    sys.exit(1)  # Exit the app if credentials are missing
 
 # Main App Class
 class TicketCreator(QMainWindow):
@@ -108,10 +100,14 @@ class TicketCreator(QMainWindow):
         """Set up the UI."""
         self.setWindowTitle("TicketMaker")
         self.setGeometry(100, 100, 800, 850)
-        self.setWindowIcon(QIcon(resource_path("assets/icon.ico")))
+        
+        # Set window icon
+        icon_path = resource_path("assets/icon.ico")
+        self.setWindowIcon(QIcon(icon_path))
 
-        # System Tray Icon
-        self.tray_icon = QSystemTrayIcon(QIcon(resource_path("assets/icon.ico")), self)
+        # Set system tray icon
+        tray_icon_path = resource_path("assets/icon.ico")
+        self.tray_icon = QSystemTrayIcon(QIcon(tray_icon_path), self)
         self.tray_icon.setToolTip("TicketMaker")
 
         # Tray Menu
@@ -141,7 +137,7 @@ class TicketCreator(QMainWindow):
         # Rich Text Editor
         layout.addWidget(QLabel("Description:"))
         self.editor = QWebEngineView()
-        editor_path = resource_path("editor.html")
+        editor_path = resource_path("src/editor.html")
         if os.path.exists(editor_path):
             self.editor.setUrl(QUrl.fromLocalFile(editor_path))
         else:
@@ -276,15 +272,13 @@ class TicketCreator(QMainWindow):
         )
 
     def exit_application(self):
-        """Exit the application cleanly and remove the config file for portability."""
+        """Exit the application cleanly."""
         try:
-            if os.path.exists(CONFIG_PATH):
-                os.remove(CONFIG_PATH)
-                print(f"Configuration file {CONFIG_PATH} removed.")
+            self.tray_icon.hide()
+            print("Tray icon hidden. Application exiting.")
         except Exception as e:
-            print(f"Failed to remove configuration file: {e}")
+            print(f"Error during application exit: {e}")
         
-        self.tray_icon.hide()
         QApplication.quit()
 
     def create_ticket(self):
@@ -301,8 +295,8 @@ class TicketCreator(QMainWindow):
         self.email_input.clear()
 
         # Reset the editor's content without affecting its visibility
-        if os.path.exists(resource_path("editor.html")):
-            self.editor.setUrl(QUrl.fromLocalFile(resource_path("editor.html")))
+        if os.path.exists(resource_path("src/editor.html")):
+            self.editor.setUrl(QUrl.fromLocalFile(resource_path("src/editor.html")))
         else:
             self.editor.setHtml("<h3>Editor file not found</h3>")
 
@@ -425,15 +419,29 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
+    # Paths and keys
+    config_path = os.path.expandvars(r"%PROGRAMDATA%\TicketMaker\local_config.json")
+    key_name = "TicketMakerEncryptionKey"
+
     try:
-        # Load configuration
-        config = setup_config(argparse.Namespace(config=False))
+        # Fetch configuration
+        # Configuration setup using the retrieved credentials
+        config = {
+            "api_url": url,       # Retrieved Freshdesk URL
+            "api_key": api_key    # Retrieved Freshdesk API Key
+        }
         if not config:
-            QMessageBox.critical(None, "Error", "No configuration found. Please set up the app.")
+            QMessageBox.critical(None, "Error", "Failed to load configuration. Please check your setup.")
             sys.exit(1)
 
         # Show splash screen
-        splash_pix = QPixmap(resource_path("assets/splash_logo.png"))
+        splash_logo_path = resource_path("assets/splash_logo.png")
+        print("Resolved splash logo path:", splash_logo_path)  # Debugging line to verify path
+        splash_pix = QPixmap(splash_logo_path)
+
+        if splash_pix.isNull():
+            print("Failed to load splash logo:", splash_logo_path)  # Debugging error message
+
         splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
         splash.setWindowFlag(Qt.FramelessWindowHint)
         splash.show()
