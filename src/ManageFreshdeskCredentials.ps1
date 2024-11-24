@@ -1,4 +1,3 @@
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
 
 param (
     [switch]$Add,
