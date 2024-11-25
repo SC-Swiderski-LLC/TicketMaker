@@ -131,17 +131,20 @@ class TicketCreator(QMainWindow):
         layout = QVBoxLayout()
 
         # Subject Field
-        layout.addWidget(QLabel("Subject:"))
+        self.subject_label = QLabel("Subject: ")
+        layout.addWidget(QLabel(self.subject_label))
         self.subject_input = QLineEdit(placeholderText="Enter the ticket subject here")
         layout.addWidget(self.subject_input)
 
         # Email Field
-        layout.addWidget(QLabel("Your Email:"))
+        self.email_label = QLabel("Your Email:")
+        layout.addWidget(self.email_label)
         self.email_input = QLineEdit(placeholderText="Enter your email address")
         layout.addWidget(self.email_input)
 
         # Rich Text Editor
-        layout.addWidget(QLabel("Description:"))
+        self.description_label = QLabel("Description:")
+        layout.addWidget(self.description_label)
         self.editor = QWebEngineView()
         editor_path = resource_path("src/editor.html")
         if os.path.exists(editor_path):
@@ -151,8 +154,8 @@ class TicketCreator(QMainWindow):
         layout.addWidget(self.editor)
 
         # Type Dropdown
-        dropdown_type_label = QLabel("Ticket Type: ")
-        layout.addWidget(dropdown_type_label)
+        self.dropdown_type_label = QLabel("Ticket Type: ")
+        layout.addWidget(self.dropdown_type_label)
         self.dropdown_type = QComboBox()
         self.dropdown_type.addItem("")
         self.dropdown_type.addItems(['Alert', 'EDR', 'Problem', 'Task', 'Sage', 'Other'])
@@ -327,12 +330,44 @@ class TicketCreator(QMainWindow):
         QApplication.quit()
 
     def create_ticket(self):
-        subject = self.subject_input.text().strip()
-        email = self.email_input.text().strip()
-        if not subject or not email:
-            QMessageBox.critical(self, "Error", "Subject and Email are required!")
-            return
-        self.editor.page().runJavaScript("getContent()", self.handle_description_content)
+
+        def validate_field(field_label, field_input, value, error_msg):
+            if not value.strip():
+                field_label.setStyleSheet('color: red;')
+                field_input.setStyleSheet('border: 2px solid red;')
+                return error_msg
+            field_label.setStyleSheet('')
+            field_input.setStyleSheet('')
+            return None
+        
+        missing_fields = []
+        missing_fields.append(validate_field(self.subject_label, self.subject_input, self.subject_input.text(), 'Subject'))
+        missing_fields.append(validate_field(self.email_label, self.email_input, self.email_input.text(), 'Email'))
+        missing_fields.append(validate_field(self.dropdown_type_label, self.dropdown_type, self.dropdown_type.currentText(), 'Type'))
+
+        # Validate the Description field asynchronously
+        def validate_description(content):
+            if not content.strip():
+                self.description_label.setStyleSheet('color: red;')
+                self.editor.page().runJavaScript("document.getElementById('editor').classList.add('invalid')")
+                missing_fields.append('Description')
+            else:
+                self.description_label.setStyleSheet('')
+                self.editor.page().runJavaScript("document.getElementById('editor').classList.remove('invalid')")
+
+            # Show errors or proceed
+            if missing_fields:
+                QMessageBox.critical(self, 'Error', f'The following fields are required: \n{', '.join(filter(None, missing_fields))}')
+            else:
+                self.send_ticket()
+
+        self.editor.page().runJavaScript("document.getElementById('editor').innerText", validate_description)
+        # subject = self.subject_input.text().strip()
+        # email = self.email_input.text().strip()
+        # if not subject or not email:
+        #     QMessageBox.critical(self, "Error", "Subject and Email are required!")
+        #     return
+        # self.editor.page().runJavaScript("getContent()", self.handle_description_content)
 
     def clear_fields(self):
         """Clear all input fields and reset the form."""
@@ -347,11 +382,19 @@ class TicketCreator(QMainWindow):
 
         # Reset dropdowns and attachments
         self.dropdown_type.setCurrentIndex(0)
-        self.dropdown_classification.setCurrentIndex(0)
         self.priority_dropdown.setCurrentIndex(0)
         self.status_dropdown.setCurrentIndex(0)
         self.attachments = []
         self.attachment_label.setText("Attachments:")
+
+        self.subject_label.setStyleSheet("")
+        self.subject_input.setStyleSheet("")
+        self.email_label.setStyleSheet("")
+        self.email_input.setStyleSheet("")
+        self.dropdown_type_label.setStyleSheet("")
+        self.dropdown_type.setStyleSheet("")
+        self.description_label.setStyleSheet("")
+        self.editor.page().runJavaScript("document.getElementById('editor').classList.remove('invalid')")
 
     def handle_description_content(self, description):
         self.description = description
