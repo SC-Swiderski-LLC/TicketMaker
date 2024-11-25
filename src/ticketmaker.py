@@ -28,8 +28,14 @@ logger = logging.getLogger(__name__)
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and PyInstaller."""
-    base_path = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
+    # base_path = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
+    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+
     resolved_path = os.path.join(base_path, relative_path)
+
     if not os.path.exists(resolved_path):
         raise FileNotFoundError(f"Resource not found: {resolved_path}")
     return resolved_path
@@ -143,6 +149,36 @@ class TicketCreator(QMainWindow):
         else:
             self.editor.setHtml("<h3>Editor file not found</h3>")
         layout.addWidget(self.editor)
+
+        # Type Dropdown
+        dropdown_type_label = QLabel("Ticket Type: ")
+        layout.addWidget(dropdown_type_label)
+        self.dropdown_type = QComboBox()
+        self.dropdown_type.addItem("")
+        self.dropdown_type.addItems(['Alert', 'EDR', 'Problem', 'Task', 'Sage', 'Other'])
+        layout.addWidget(self.dropdown_type)
+        self.dropdown_type.currentTextChanged.connect(self.handle_dropdown_type_change)
+
+        # Classification Dropdown
+        self.classification_label = QLabel("Classification: ")
+        self.classification_label.hide()
+        layout.addWidget(self.classification_label)
+        self.dropdown_classification = QComboBox()
+        self.dropdown_classification.addItem('')
+        self.dropdown_classification.addItems([
+            "Intacct - Support Request",
+            "Intacct - Report Issue",
+            "Intacct - Enhancement Request",
+            "SCM - Support Request",
+            "SCM - Report Issue",
+            "SCM - Enhancement Request",
+            "Sage - Access Request",
+            "Sage - System Down",
+            "Sage - General Inquiry",
+            "Password Reset"
+        ])
+        self.dropdown_classification.hide()
+        layout.addWidget(self.dropdown_classification)
 
         # Priority Dropdown
         layout.addWidget(QLabel("Priority:"))
@@ -261,6 +297,15 @@ class TicketCreator(QMainWindow):
         if reason == QSystemTrayIcon.DoubleClick:
             self.show()
 
+    def handle_dropdown_type_change(self, value):
+        if value == 'Sage':
+            self.classification_label.show()
+            self.dropdown_classification.show()
+            self.dropdown_classification.setCurrentIndex(0)
+        else:
+            self.classification_label.hide()
+            self.dropdown_classification.hide()
+
     def closeEvent(self, event):
         event.ignore()
         self.hide()
@@ -301,6 +346,8 @@ class TicketCreator(QMainWindow):
             self.editor.setHtml("<h3>Editor file not found</h3>")
 
         # Reset dropdowns and attachments
+        self.dropdown_type.setCurrentIndex(0)
+        self.dropdown_classification.setCurrentIndex(0)
         self.priority_dropdown.setCurrentIndex(0)
         self.status_dropdown.setCurrentIndex(0)
         self.attachments = []
@@ -335,6 +382,8 @@ class TicketCreator(QMainWindow):
             subject = self.subject_input.text().strip()
             email = self.email_input.text().strip()
             description = self.description or "No description provided"
+            type = self.dropdown_type
+            classification = self.dropdown_classification
             priority = self.priority_dropdown.currentIndex() + 1
             status = self.status_dropdown.currentIndex() + 2
 
@@ -344,11 +393,15 @@ class TicketCreator(QMainWindow):
 
             # Prepare ticket data
             data = {
-                "email": email,
-                "subject": subject,
-                "description": description,
-                "priority": priority,  # Keep as integer
-                "status": status       # Keep as integer
+                "email"        : email,
+                "subject"      : subject,
+                "description"  : description,
+                "priority"     : priority,     # Keep as integer
+                "status"       : status,       # Keep as integer
+                "type"         : self.dropdown_type.currentText(),
+                "custom_fields": {
+                    "cf_classification": self.dropdown_classification.currentText()
+                }
             }
 
             # Prepare attachments
@@ -435,7 +488,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
         # Show splash screen
-        splash_logo_path = resource_path("assets/splash_logo.png")
+        splash_logo_path = resource_path("assets\\splash_logo.png")
         print("Resolved splash logo path:", splash_logo_path)  # Debugging line to verify path
         splash_pix = QPixmap(splash_logo_path)
 
