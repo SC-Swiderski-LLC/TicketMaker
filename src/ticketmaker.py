@@ -4,9 +4,9 @@ import json
 import re
 import base64
 import winreg
-import win32cred
-import subprocess
 import logging
+from ctypes import Structure, c_uint, POINTER, windll, create_string_buffer, byref, cast, c_void_p, string_at
+from ctypes.wintypes import DWORD
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QComboBox,
     QPushButton, QWidget, QMessageBox, QFileDialog, QSystemTrayIcon, QMenu,
@@ -16,13 +16,22 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtGui import QIcon, QPixmap, QPalette, QColor
 from freshdesk.api import API
-from cryptography.fernet import Fernet
 import requests
 
-# Set up logging
+# File paths for logs and encrypted credentials
+STORAGE_PATH = r"C:\ProgramData\TicketMaker"
+LOG_FILE = os.path.join(STORAGE_PATH, "ticketmaker.log")
+URL_FILE = os.path.join(STORAGE_PATH, "FreshdeskURL.dat")
+APIKEY_FILE = os.path.join(STORAGE_PATH, "FreshdeskAPIKey.dat")
+
+# Set up logging to write to both a file and the console
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO").upper(),
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -34,23 +43,72 @@ def resource_path(relative_path):
         raise FileNotFoundError(f"Resource not found: {resolved_path}")
     return resolved_path
 
-def get_credential(credential_name):
-    """Retrieve a credential from Windows Credential Manager."""
+class DATA_BLOB(Structure):
+    _fields_ = [("cbData", DWORD), ("pbData", POINTER(c_void_p))]
+
+def decrypt_with_dpapi(encrypted_data):
+    """
+    Decrypt data using Windows DPAPI.
+    """
+    if not encrypted_data:
+        raise ValueError("Encrypted data is empty or None!")
+
+    encrypted_blob = DATA_BLOB()
+    encrypted_blob.cbData = len(encrypted_data)
+    encrypted_blob.pbData = cast(create_string_buffer(encrypted_data), POINTER(c_void_p))
+
+    decrypted_blob = DATA_BLOB()
+    description = POINTER(c_void_p)()
+
+    CRYPTPROTECT_UI_FORBIDDEN = 0x01
+    result = windll.crypt32.CryptUnprotectData(
+        byref(encrypted_blob),
+        byref(description),
+        None,
+        None,
+        None,
+        CRYPTPROTECT_UI_FORBIDDEN,
+        byref(decrypted_blob)
+    )
+
+    if not result:
+        raise Exception("Decryption failed! Ensure data is correctly formatted.")
+
+    decrypted_data = string_at(decrypted_blob.pbData, decrypted_blob.cbData)
+
+    windll.kernel32.LocalFree(decrypted_blob.pbData)
+
+    return decrypted_data.decode("utf-8")
+
+def sanitize_credential(credential):
+    """Clean up credentials by removing unexpected characters."""
+    return credential.strip().replace("\x00", "")
+
+def load_credentials():
+    """
+    Load and decrypt Freshdesk credentials using DPAPI.
+    """
     try:
-        # Retrieve the credential from Windows Credential Manager
-        credential = win32cred.CredRead(credential_name, win32cred.CRED_TYPE_GENERIC)
-        if credential:
-            return credential['CredentialBlob'].decode()
-        else:
-            logger.warning(f"Credential {credential_name} not found.")
-            return None
+        # Read and decrypt Freshdesk URL
+        with open(URL_FILE, "r") as f:
+            encrypted_url = base64.b64decode(f.read())
+            freshdesk_url = decrypt_with_dpapi(encrypted_url)
+            logger.info(f"Decrypted Freshdesk URL: {freshdesk_url}")
+
+        # Read and decrypt Freshdesk API Key
+        with open(APIKEY_FILE, "r") as f:
+            encrypted_apikey = base64.b64decode(f.read())
+            freshdesk_apikey = decrypt_with_dpapi(encrypted_apikey)
+            logger.info(f"Decrypted Freshdesk API Key: {freshdesk_apikey}")
+
+        return sanitize_credential(freshdesk_url), sanitize_credential(freshdesk_apikey)
+
     except Exception as e:
-        logger.error(f"Error retrieving credential {credential_name}: {e}")
-        return None
+        logger.error(f"Failed to load credentials: {e}")
+        return None, None
 
 # Retrieve the Freshdesk URL and API Key
-url = get_credential("TicketMaker_FreshdeskURL")
-api_key = get_credential("TicketMaker_APIKey")
+url, api_key = load_credentials()
 
 if url and api_key:
     logger.info(f"Freshdesk URL: {url}")
@@ -69,29 +127,13 @@ def is_windows_dark_mode():
     except Exception as e:
         logger.warning(f"Dark mode detection failed: {e}")
         return False
-    
-def sanitize_credential(credential):
-    """Clean up credentials by removing unexpected characters."""
-    return credential.strip().replace("\x00", "")
-
-# Retrieve and sanitize Freshdesk URL and API Key
-url = get_credential("TicketMaker_FreshdeskURL")
-api_key = get_credential("TicketMaker_APIKey")
-
-if url and api_key:
-    url = sanitize_credential(url)
-    api_key = sanitize_credential(api_key)
-    logger.info(f"Freshdesk URL: {url}")
-    logger.info(f"Freshdesk API Key: {api_key}")
-else:
-    logger.critical("Failed to retrieve Freshdesk credentials. Exiting.")
-    sys.exit(1)  # Exit the app if credentials are missing
 
 # Main App Class
 class TicketCreator(QMainWindow):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        logger.debug(f"TicketCreator initialized with config: {self.config}")
         self.attachments = []
         self.init_ui()
         self.apply_theme()
@@ -331,6 +373,8 @@ class TicketCreator(QMainWindow):
     def send_ticket(self):
         """Send the ticket data to the Freshdesk API with or without attachments."""
         try:
+            logger.info("Initiating ticket creation process...")
+
             # Prepare ticket details
             subject = self.subject_input.text().strip()
             email = self.email_input.text().strip()
@@ -339,8 +383,11 @@ class TicketCreator(QMainWindow):
             status = self.status_dropdown.currentIndex() + 2
 
             if not subject or not email:
+                logger.error("Subject or Email is missing!")
                 QMessageBox.critical(self, "Error", "Subject and Email are required!")
                 return
+
+            logger.info(f"Ticket details: subject={subject}, email={email}, priority={priority}, status={status}")
 
             # Prepare ticket data
             data = {
@@ -351,29 +398,31 @@ class TicketCreator(QMainWindow):
                 "status": status       # Keep as integer
             }
 
+            # Log data being sent
+            logger.info(f"Data to be sent: {data}")
+
             # Prepare attachments
             files = []
             has_attachments = bool(self.attachments or self.embedded_images)
-            try:
-                # Add user-selected files
-                for attachment in self.attachments:
-                    files.append(("attachments[]", (os.path.basename(attachment), open(attachment, "rb"))))
+            if has_attachments:
+                try:
+                    for attachment in self.attachments:
+                        logger.info(f"Processing attachment: {attachment}")
+                        files.append(("attachments[]", (os.path.basename(attachment), open(attachment, "rb"))))
 
-                # Add embedded images as attachments
-                for idx, embedded_image in enumerate(self.embedded_images):
-                    file_name = f"embedded_image_{idx + 1}.png"
+                    for idx, embedded_image in enumerate(self.embedded_images):
+                        file_name = f"embedded_image_{idx + 1}.png"
+                        missing_padding = len(embedded_image) % 4
+                        if missing_padding != 0:
+                            embedded_image += "=" * (4 - missing_padding)
 
-                    # Fix padding for the base64 string
-                    missing_padding = len(embedded_image) % 4
-                    if missing_padding != 0:
-                        embedded_image += "=" * (4 - missing_padding)
-
-                    with open(file_name, "wb") as img_file:
-                        img_file.write(base64.b64decode(embedded_image))
-                    files.append(("attachments[]", (file_name, open(file_name, "rb"))))
-            except Exception as e:
-                QMessageBox.warning(self, "Warning", f"Could not process attachments or embedded images:\n{e}")
-                return
+                        with open(file_name, "wb") as img_file:
+                            img_file.write(base64.b64decode(embedded_image))
+                        files.append(("attachments[]", (file_name, open(file_name, "rb"))))
+                except Exception as attachment_error:
+                    logger.error(f"Error processing attachments: {attachment_error}")
+                    QMessageBox.warning(self, "Warning", f"Could not process attachments or embedded images:\n{attachment_error}")
+                    return
 
             # API headers
             credentials = f"{self.config['api_key']}:X"
@@ -382,78 +431,100 @@ class TicketCreator(QMainWindow):
                 "Authorization": f"Basic {encoded_credentials}"
             }
 
+            logger.info(f"Headers: {headers}")
+
             # API URL
             api_url = f"https://{self.config['api_url'].rstrip('/')}/api/v2/tickets"
+            logger.info(f"API URL: {api_url}")
 
             # Send API request
-            if has_attachments:
-                # Use multipart/form-data for attachments
-                response = requests.post(api_url, headers=headers, data=data, files=files)
-            else:
-                # Use application/json for text-only tickets
-                headers["Content-Type"] = "application/json"
-                response = requests.post(api_url, headers=headers, json=data)
+            response = None
+            try:
+                if has_attachments:
+                    response = requests.post(api_url, headers=headers, data=data, files=files)
+                else:
+                    headers["Content-Type"] = "application/json"
+                    response = requests.post(api_url, headers=headers, json=data)
 
-            # Cleanup embedded images and file handles
-            for file_path in self.embedded_images:
-                try:
-                    os.remove(file_path)
-                except Exception:
-                    pass
-            for _, (_, file_handle) in files:
-                file_handle.close()
+                logger.info(f"Response status code: {response.status_code}")
+                logger.info(f"Response body: {response.text}")
 
-            # Handle API response
-            if response.status_code == 201:
-                QMessageBox.information(self, "Success", "Ticket created successfully!")
-                self.clear_fields()
-            else:
-                error_message = response.json().get("message", response.text)
-                QMessageBox.critical(self, "Error", f"Failed to create ticket: {error_message}")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred while creating the ticket: {e}")
+                # Handle API response
+                if response.status_code == 201:
+                    QMessageBox.information(self, "Success", "Ticket created successfully!")
+                    self.clear_fields()
+                else:
+                    error_message = response.json().get("message", response.text)
+                    logger.error(f"API returned an error: {error_message}")
+                    QMessageBox.critical(self, "Error", f"Failed to create ticket: {error_message}")
+            except Exception as request_error:
+                logger.error(f"Error making API request: {request_error}")
+                QMessageBox.critical(self, "Error", f"Failed to communicate with Freshdesk: {request_error}")
+            finally:
+                # Cleanup embedded images and file handles
+                for file_path in self.embedded_images:
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        pass
+                for _, (_, file_handle) in files:
+                    try:
+                        file_handle.close()
+                    except Exception:
+                        pass
+        except Exception as general_error:
+            logger.critical(f"Unexpected error in send_ticket(): {general_error}")
+            QMessageBox.critical(self, "Critical Error", f"An unexpected error occurred:\n{general_error}")
 
 if __name__ == "__main__":
     import traceback
 
     app = QApplication(sys.argv)
 
-    # Paths and keys
-    config_path = os.path.expandvars(r"%PROGRAMDATA%\TicketMaker\local_config.json")
-    key_name = "TicketMakerEncryptionKey"
-
     try:
-        # Fetch configuration
-        # Configuration setup using the retrieved credentials
-        config = {
-            "api_url": url,       # Retrieved Freshdesk URL
-            "api_key": api_key    # Retrieved Freshdesk API Key
-        }
-        if not config:
+        # Load credentials using DPAPI
+        url, api_key = load_credentials()
+
+        if url and api_key:
+            config = {
+                "api_url": url,
+                "api_key": api_key
+            }
+
+            logger.info(f"Configuration loaded: {config}")
+        else:
+            logger.critical("Failed to retrieve Freshdesk credentials. Exiting.")
             QMessageBox.critical(None, "Error", "Failed to load configuration. Please check your setup.")
             sys.exit(1)
 
         # Show splash screen
         splash_logo_path = resource_path("assets/splash_logo.png")
-        print("Resolved splash logo path:", splash_logo_path)  # Debugging line to verify path
         splash_pix = QPixmap(splash_logo_path)
 
         if splash_pix.isNull():
-            print("Failed to load splash logo:", splash_logo_path)  # Debugging error message
+            logger.error(f"Failed to load splash logo: {splash_logo_path}")
 
         splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
         splash.setWindowFlag(Qt.FramelessWindowHint)
         splash.show()
 
         # Launch the main window
-        window = TicketCreator(config)
+        try:
+            window = TicketCreator(config)
+            logger.info("Main window initialized successfully.")
+        except Exception as e:
+            logger.critical(f"Failed to initialize TicketCreator: {e}")
+            error_details = traceback.format_exc()
+            QMessageBox.critical(None, "Critical Error", f"An error occurred while initializing the application:\n\n{error_details}")
+            sys.exit(1)
+
         splash.finish(window)
         window.show()
+
     except Exception as e:
         # Log and display any unexpected errors
         error_details = traceback.format_exc()
-        print(f"Critical Error: {error_details}")
+        logger.critical(f"Unexpected error during application startup: {error_details}")
         QMessageBox.critical(None, "Critical Error", f"An unexpected error occurred:\n\n{error_details}")
         sys.exit(1)
 
@@ -462,6 +533,7 @@ if __name__ == "__main__":
         sys.exit(app.exec_())
     except Exception as e:
         error_details = traceback.format_exc()
-        print(f"Runtime Error: {error_details}")
+        logger.critical(f"Runtime error: {error_details}")
         QMessageBox.critical(None, "Critical Error", f"A fatal error occurred during app execution:\n\n{error_details}")
         sys.exit(1)
+
