@@ -1,92 +1,62 @@
-# TicketMaker - Freshdesk Ticket Creator
+# Welcome to TicketMaker!
+
+TicketMaker is your go-to solution for seamlessly creating support tickets in a Freshdesk system. This repository serves as a complete guide to help you deploy, configure, and get the most out of TicketMaker in your environment.
 
 ![Application Screenshot](images/screenshotmain.png)
 
-## Overview
+---
 
-**TicketMaker** is a Python application designed to simplify creating support tickets in a Freshdesk system. This repository contains the full version of the application:
+## 📖 Table of Contents
 
+- **[Getting Started](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Getting-Started)**  
+  A step-by-step guide to cloning and working with TicketMaker source code.
 
-### Features
+- **[Features](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Features)**  
+  Explore all the key features, including the rich text editor, secure credential storage, and auto dark mode.
 
-- **Rich Text Editor**: Supports formatted text and embedded images in the ticket description.
-- **Embedded Image Handling**: Automatically extracts embedded images and sends them as attachments.
-- **File Attachments**: Users can upload additional files to include with their tickets.
-- **User-Friendly GUI**: Intuitive fields for entering ticket details.
-- **Dropdown Options**: Predefined dropdowns for Priority and Status fields.
-- **Validation**: Ensures all required fields are filled before submission.
-- **Secure API Integration**: Communicates with the Freshdesk API for ticket creation.
+- **[Self-Packing TicketMaker](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Self-Packing-TicketMaker)**  
+  Instructions on how to clone the repository and use PyInstaller to create a custom `.exe`.
 
-### How It Works
+- **[Intune Deployment](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Intune-Deployment)**  
+  Detailed instructions for deploying TicketMaker in managed environments using Microsoft Intune.
 
-1. **Fill in Required Fields**:
-   - **Subject**: Short description of the issue.
-   - **Description**: Rich text description with support for images.
-   - **Email**: Contact email of the requester.
-   - **Priority**: Dropdown to select ticket priority (Low, Medium, High, Urgent).
-   - **Status**: Dropdown to select ticket status (Open, Pending, Resolved, Closed).
-   - **Attachments**: Add files to include with the ticket.
+- **[Troubleshooting](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Troubleshooting)**  
+  Find solutions to common issues and errors.
 
-2. **Submit Ticket**:
-   - The app validates the inputs and extracts embedded images.
-   - Submits the ticket details and attachments to the Freshdesk API.
-   - Displays a success or error message based on the API response.
+- **[Roadmap](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Roadmap)**  
+  Planned future development and upcoming features.
 
-   ![Full Version Screenshot](images/successmessage.png)
+- **[Contributing](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Contributing)**  
+  Learn how you can contribute to the development of TicketMaker.
 
-3. **Clear Form**:
-   - The fields are reset after successful submission.
-   - Embedded images saved during processing are automatically cleaned up.
+- **[Code of Conduct](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Code-of-Conduct)**  
+  Read our Code of Conduct if you plan to participate in the project.
 
-## Installation
-
-### Common Steps
-
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/TicketMaker-Community-Project/TicketMaker
-   cd TicketMaker
-   ```
-
-2. **Install Dependencies**:
-   Ensure you have Python 3.x installed and install the required libraries:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure API Settings**:
-   - The installer will prompt you to enter your Freshdesk domain and API key during installation.
-   - These values will be stored in the system registry for use by the application.
-
-### Packaging the Application
-
-1. **Create an Executable**:
-   Use the following PyInstaller command to package the application:
-   ```bash
-   pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import PyQt5.QtWidgets --hidden-import PyQt5.QtWebEngineWidgets --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui ticketmaker.py
-
-   ```
-
-2. **Build the Installer**:
-   Use the provided `TicketMakerInstaller.iss` Inno Setup script in the installer folder to compile the installer for distribution.
-   
-   - Place the `ticketmaker.exe` from the `dist` folder into the the `installer` folder.
-   - Run the Inno Setup script to compile into the installer.
-
-## Notes
-
-- Ensure your Freshdesk API key has the necessary permissions to create tickets.
-- Use HTTPS for secure communication with the Freshdesk API.
-- Embedded images in the rich text editor will be extracted and attached automatically.
-
-## Contributing
-
-If you want to contribute to this project, feel free to fork the repository, make changes, and submit a pull request.
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
+- **[Credits and Attribution](https://github.com/SC-Swiderski-LLC/TicketMaker/Credits-and-Attribution)**  
+  Creators and contributors of these resources.
 
 ---
 
-Thank you for using TicketMaker! Let us know if you have any questions or suggestions.
+## ✨ Why TicketMaker?
+
+TicketMaker is designed for IT admins and organizations looking for a lightweight yet powerful tool to streamline ticket creation in Freshdesk. Key highlights include:
+
+- **Secure by Design**: Credentials are stored in Windows Credential Manager for maximum security.
+- **Easy to Deploy**: Supports standalone use or Intune-managed environments.
+- **Highly Customizable**: Open-source and easy to adapt to your needs.
+
+---
+
+## 🔗 Quick Links
+
+- [TicketMaker GitHub Repository](https://github.com/SC-Swiderski-LLC/TicketMaker)
+- [Freshdesk API Documentation](https://developer.freshdesk.com/api/)
+- [Submit an Issue](https://github.com/SC-Swiderski-LLC/TicketMaker/issues) (for bugs or feature requests)
+
+---
+
+## 🛠 Need Help?
+
+If you encounter any issues or have questions, feel free to explore the **[Troubleshooting](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Troubleshooting)** section or [open an issue on GitHub](https://github.com/SC-Swiderski-LLC/TicketMaker/issues).
+
+Thank you for using TicketMaker! 🚀

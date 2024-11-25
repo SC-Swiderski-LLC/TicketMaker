@@ -1,14 +1,45 @@
-# Ignore the Python installer
+# Ignore Python installer
 installer/python-3.12.7-amd64.exe
 
-# Ignore all `.exe` files in the installer folder
+# Ignore all `.exe` files, except specific ones
 installer/*.exe
 *.exe
+!dist/configurator.exe  # Allow configurator.exe in dist
 
-# Ignore all `dist` and `build` directories
+# Ignore all `.msi` files
+installer/*.msi
+*.msi
+
+# Ignore all `.cab` files
+installer/*.cab
+*.cab
+
+# Ignore TicketMaker-related folders inside the installer directory
+installer/TicketMaker-cache/
+installer/TicketMaker-cache/*
+installer/TicketMaker-SetupFiles/
+installer/TicketMaker-SetupFiles/*
+
+# Ignore all generated directories except specific files
 dist/
+!dist/configurator.exe
+!dist/README.md
+
+# Ignore PyInstaller build output
 build/
 
-# Ignore IDE or editor-specific files
+# Ignore PyInstaller spec files
+*.spec
+
+# Ignore IDE or editor-specific files and logs
 .vscode/
 *.log
+
+# Ignore OS-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore backup or temporary files
+*.bak
+*.swp
+*.tmp
