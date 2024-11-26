@@ -14,8 +14,11 @@ TicketMaker is your go-to solution for seamlessly creating support tickets in a 
 - **[Features](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Features)**  
   Explore all the key features, including the rich text editor, secure credential storage, and auto dark mode.
 
-- **[Self-Packing TicketMaker](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Self-Packing-TicketMaker)**  
+- **[Self-Packing TicketMaker](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Self%E2%80%90Packing-TicketMaker)**  
   Instructions on how to clone the repository and use PyInstaller to create a custom `.exe`.
+
+- **[Installer](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Installer)**  
+  Information for administrators on working with the installer.
 
 - **[Intune Deployment](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Intune-Deployment)**  
   Detailed instructions for deploying TicketMaker in managed environments using Microsoft Intune.
@@ -32,7 +35,7 @@ TicketMaker is your go-to solution for seamlessly creating support tickets in a 
 - **[Code of Conduct](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Code-of-Conduct)**  
   Read our Code of Conduct if you plan to participate in the project.
 
-- **[Credits and Attribution](https://github.com/SC-Swiderski-LLC/TicketMaker/Credits-and-Attribution)**  
+- **[Credits and Attribution](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Credits-and-Attribution)**  
   Creators and contributors of these resources.
 
 ---
