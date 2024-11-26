@@ -1,10 +1,10 @@
 [Setup]
 AppName=TicketMaker
 AppVersion=0.3.5
-DefaultDirName={localappdata}\TicketMaker
+DefaultDirName={pf64}\TicketMaker
 DefaultGroupName=TicketMaker
-OutputBaseFilename=TicketMaker_InteractiveInstaller
-PrivilegesRequired=lowest
+OutputBaseFilename=TicketMaker_Installer
+PrivilegesRequired=admin
 Compression=lzma
 SolidCompression=yes
 WizardImageFile=TicketMakerLogo.bmp
@@ -12,28 +12,26 @@ WizardSmallImageFile=TicketMakerLogoSmall.bmp
 UninstallDisplayName=TicketMaker
 UninstallDisplayIcon=icon.ico
 
-[Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
-
 [Files]
 Source: "TicketMaker.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "SaveCredentials.cmd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "encrypt.ps1"; DestDir: "{tmp}"; Flags: deleteafterinstall
+
+[Icons]
+Name: "{group}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
 
 [Code]
-// Variables to hold user input
 var
   FreshdeskURL: string;
   FreshdeskAPIKey: string;
   InputPage: TInputQueryWizardPage;
 
-// Check if the installer is running silently
+// Function to check if running silently
 function IsSilentInstall: Boolean;
 begin
-  // Use WizardSilent to detect silent mode
   Result := WizardSilent;
 end;
 
-// Function to parse command-line parameters
+// Parse command-line parameters
 function GetParamValue(const ParamName: string): string;
 var
   I: Integer;
@@ -52,114 +50,85 @@ begin
   end;
 end;
 
-// Initialize the wizard and add custom input page (only for interactive installs)
+// Initialize wizard
 procedure InitializeWizard;
 begin
-  if not IsSilentInstall then
+  if IsSilentInstall then
   begin
-    // Create a custom input page for Freshdesk credentials
+    FreshdeskURL := GetParamValue('FreshdeskURL');
+    FreshdeskAPIKey := GetParamValue('FreshdeskApiKey');
+
+    // Validate parameters
+    if (FreshdeskURL = '') or (FreshdeskAPIKey = '') then
+    begin
+      MsgBox('Silent install requires both /FreshdeskURL and /FreshdeskApiKey parameters.', mbError, MB_OK);
+      Abort(); // Abort if parameters are missing
+    end;
+  end
+  else
+  begin
     InputPage := CreateInputQueryPage(wpWelcome,
       'Freshdesk Credentials',
-      'Please enter your Freshdesk URL and API Key',
-      'This information will be securely stored in Windows Credential Manager.');
+      'Enter Freshdesk URL and API Key',
+      'This information will be securely stored.');
 
-    // Add input fields
-    InputPage.Add('Freshdesk URL:', False);  // Regular text field
-    InputPage.Add('API Key:', True);        // Masked password field
+    InputPage.Add('Freshdesk URL:', False);
+    InputPage.Add('API Key:', True);
   end;
 end;
 
-// Validate user input before moving to the next page
+// Handle Next button click
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
-  Result := True; // Allow navigation by default
+  Result := True;
 
-  // Validate input on the custom page (interactive installs only)
-  if not IsSilentInstall and (CurPageID = InputPage.ID) then
+  if not IsSilentInstall and Assigned(InputPage) and (CurPageID = InputPage.ID) then
   begin
-    FreshdeskURL := InputPage.Values[0];
-    FreshdeskAPIKey := InputPage.Values[1];
+    FreshdeskURL := Trim(InputPage.Values[0]);
+    FreshdeskAPIKey := Trim(InputPage.Values[1]);
 
-    // Ensure fields are not empty
     if (FreshdeskURL = '') or (FreshdeskAPIKey = '') then
     begin
-      MsgBox('Both fields are required.', mbError, MB_OK);
-      Result := False; // Prevent navigation to the next page
+      MsgBox('Both Freshdesk URL and API Key are required.', mbError, MB_OK);
+      Result := False;
     end;
   end;
 end;
 
-// Retrieve command-line parameters for silent install
+// Handle silent parameters
 procedure InitializeSilentInstall;
-var
-  LogFile: string;
 begin
-  LogFile := ExpandConstant('{localappdata}\TicketMaker\SilentInstallDebug.log');
-  SaveStringToFile(LogFile, 'Starting Silent Installation...' + #13#10, True);
-
-  // Retrieve parameters
   FreshdeskURL := GetParamValue('FreshdeskURL');
-  FreshdeskAPIKey := GetParamValue('FreshdeskAPIKey');
+  FreshdeskAPIKey := GetParamValue('FreshdeskApiKey');
 
-  SaveStringToFile(LogFile, 'FreshdeskURL: ' + FreshdeskURL + #13#10, True);
-  SaveStringToFile(LogFile, 'FreshdeskAPIKey: ' + FreshdeskAPIKey + #13#10, True);
-
-  // Ensure required parameters are provided
   if (FreshdeskURL = '') or (FreshdeskAPIKey = '') then
   begin
-    SaveStringToFile(LogFile, 'Error: Missing parameters. Installation aborted.' + #13#10, True);
-    MsgBox('Error: Missing parameters for silent install. Provide FreshdeskURL and FreshdeskAPIKey.', mbError, MB_OK);
+    MsgBox('Silent install requires both /FreshdeskURL and /FreshdeskApiKey parameters.', mbError, MB_OK);
     Abort();
   end;
-
-  SaveStringToFile(LogFile, 'Parameters validated successfully.' + #13#10, True);
 end;
 
-// Run PowerShell script to save credentials
-function SaveCredentials: Boolean;
-var
-  ResultCode: Integer;
-  CmdCommand, LogFile, ErrorLog: string;
-begin
-  // Log file for debugging
-  LogFile := ExpandConstant('{localappdata}\TicketMaker\SilentInstallDebug.log');
-  ErrorLog := ExpandConstant('{localappdata}\TicketMaker\CmdError.log');
-
-  // Build the CMD command with named parameters
-  CmdCommand := '"' + ExpandConstant('{app}\SaveCredentials.cmd') + '" FreshdeskURL="' +
-                FreshdeskURL + '" FreshdeskAPIKey="' + FreshdeskAPIKey + '"';
-
-  // Log the CMD command
-  SaveStringToFile(LogFile, 'Executing CMD command: ' + CmdCommand + #13#10, True);
-
-  // Execute the CMD script
-  Result := Exec('cmd.exe', '/C ' + CmdCommand, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-
-  // Log the result
-  if not Result or (ResultCode <> 0) then
-  begin
-    SaveStringToFile(LogFile, 'Failed to execute CMD script. ResultCode: ' + IntToStr(ResultCode) + #13#10, True);
-    MsgBox('Failed to save credentials. Please check the log file for details.', mbError, MB_OK);
-    Result := False;
-  end
-  else
-  begin
-    SaveStringToFile(LogFile, 'CMD script executed successfully.' + #13#10, True);
-    Result := True;
-  end;
-end;
-
-// Post-installation tasks
+// Encrypt credentials
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  PowerShellScriptPath: string;
+  ResultCode: Integer;
 begin
-  if CurStep = ssInstall then
+  if CurStep = ssPostInstall then
   begin
-    // Initialize input for silent installs
-    if IsSilentInstall then
-      InitializeSilentInstall;
-
-    // Save credentials
-    if not SaveCredentials then
-      Abort(); // Cancel installation if credentials fail to save
+    PowerShellScriptPath := ExpandConstant('{tmp}\encrypt.ps1');
+    if not Exec('powershell.exe',
+                '-NoProfile -ExecutionPolicy Bypass -File "' + PowerShellScriptPath +
+                '" -FreshdeskURL "' + FreshdeskURL +
+                '" -FreshdeskApiKey "' + FreshdeskAPIKey + '"',
+                '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    begin
+      MsgBox('Failed to execute PowerShell script.', mbError, MB_OK);
+    end
+    else if ResultCode <> 0 then
+    begin
+      MsgBox('PowerShell script failed with exit code ' + IntToStr(ResultCode), mbError, MB_OK);
+    end;
   end;
 end;
+
