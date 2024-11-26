@@ -40,6 +40,7 @@ def resource_path(relative_path):
         raise FileNotFoundError(f"Resource not found: {resolved_path}")
     return resolved_path
 
+
 def get_credential(credential_name):
     """Retrieve a credential from Windows Credential Manager."""
     try:
@@ -53,6 +54,7 @@ def get_credential(credential_name):
     except Exception as e:
         logger.error(f"Error retrieving credential {credential_name}: {e}")
         return None
+    
 
 # Retrieve the Freshdesk URL and API Key
 url = get_credential("TicketMaker_FreshdeskURL")
@@ -76,9 +78,11 @@ def is_windows_dark_mode():
         logger.warning(f"Dark mode detection failed: {e}")
         return False
     
+    
 def sanitize_credential(credential):
     """Clean up credentials by removing unexpected characters."""
     return credential.strip().replace("\x00", "")
+
 
 # Retrieve and sanitize Freshdesk URL and API Key
 url = get_credential("TicketMaker_FreshdeskURL")
@@ -93,6 +97,8 @@ else:
     logger.critical("Failed to retrieve Freshdesk credentials. Exiting.")
     sys.exit(1)  # Exit the app if credentials are missing
 
+# Dark mode testing
+
 # Main App Class
 class TicketCreator(QMainWindow):
     def __init__(self, config):
@@ -101,6 +107,7 @@ class TicketCreator(QMainWindow):
         self.attachments = []
         self.init_ui()
         self.apply_theme()
+
 
     def init_ui(self):
         """Set up the UI."""
@@ -132,7 +139,7 @@ class TicketCreator(QMainWindow):
 
         # Subject Field
         self.subject_label = QLabel("Subject: ")
-        layout.addWidget(QLabel(self.subject_label))
+        layout.addWidget(self.subject_label)
         self.subject_input = QLineEdit(placeholderText="Enter the ticket subject here")
         layout.addWidget(self.subject_input)
 
@@ -216,79 +223,98 @@ class TicketCreator(QMainWindow):
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
+
     def apply_theme(self):
         """Apply dark or light theme based on OS settings."""
         app = QApplication.instance()
         is_dark_mode = is_windows_dark_mode()
 
         # Set PyQt dark palette
-        palette = QPalette()
+        # palette = QPalette()
+
         if is_dark_mode:
+            palette = QPalette()
             palette.setColor(QPalette.Window, QColor("#2b2b2b"))
             palette.setColor(QPalette.WindowText, QColor("#ffffff"))
             palette.setColor(QPalette.Base, QColor("#1e1e1e"))
             palette.setColor(QPalette.Text, QColor("#d4d4d4"))
             palette.setColor(QPalette.Button, QColor("#3c3c3c"))
             palette.setColor(QPalette.ButtonText, QColor("#ffffff"))
-
-            # Apply styles to specific widgets
-            self.subject_input.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
-            self.email_input.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
-            self.priority_dropdown.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
-            self.status_dropdown.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
-            self.attachment_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
-            self.submit_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
-            self.clear_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
-
-            # Dark mode for QMessageBox
-            app.setStyleSheet("""
-                QMessageBox {
-                    background-color: #2b2b2b;
-                    color: #ffffff;
-                }
-                QMessageBox QLabel {
-                    color: #ffffff;
-                }
-                QMessageBox QPushButton {
-                    background-color: #3c3c3c;
-                    color: #ffffff;
-                    border: 1px solid #555;
-                }
-                QMessageBox QPushButton:hover {
-                    background-color: #555;
-                }
-            """)
-
+            app.setPalette(palette)
+            self.setStyleSheet("background-color: #2b2b2b; color: #ffffff;")
         else:
-            palette = app.style().standardPalette()
-            self.subject_input.setStyleSheet("")
-            self.email_input.setStyleSheet("")
-            self.priority_dropdown.setStyleSheet("")
-            self.status_dropdown.setStyleSheet("")
-            self.attachment_button.setStyleSheet("")
-            self.submit_button.setStyleSheet("")
-            self.clear_button.setStyleSheet("")
+            palette = QPalette()
+            palette.setColor(QPalette.Window, QColor("#ffffff"))
+            palette.setColor(QPalette.WindowText, QColor("#000000"))
+            palette.setColor(QPalette.Base, QColor("#f0f0f0"))
+            palette.setColor(QPalette.Text, QColor("#000000"))
+            palette.setColor(QPalette.Button, QColor("#e0e0e0"))
+            palette.setColor(QPalette.ButtonText, QColor("#000000"))
+            app.setPalette(palette)
+            self.setStyleSheet("background-color: #ffffff; color: #000000;")
 
-            # Light mode for QMessageBox
-            app.setStyleSheet("""
-                QMessageBox {
-                    background-color: #ffffff;
-                    color: #000000;
-                }
-                QMessageBox QLabel {
-                    color: #000000;
-                }
-                QMessageBox QPushButton {
-                    background-color: #f0f0f0;
-                    color: #000000;
-                    border: 1px solid #ccc;
-                }
-                QMessageBox QPushButton:hover {
-                    background-color: #e0e0e0;
-                }
-            """)
+            # # Apply styles to specific widgets
+            # self.subject_input.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            # self.email_input.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            # self.dropdown_type.setStyleSheet('background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;')
+            # self.dropdown_classification.setStyleSheet('background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;')
+            # self.priority_dropdown.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            # self.status_dropdown.setStyleSheet("background-color: #2b2b2b; color: #ffffff; border: 1px solid #555;")
+            # self.attachment_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
+            # self.submit_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
+            # self.clear_button.setStyleSheet("background-color: #3c3c3c; color: #ffffff; border: 1px solid #555;")
 
-        app.setPalette(palette)
+            # # Dark mode for QMessageBox
+        #     app.setStyleSheet("""
+        #         QMessageBox {
+        #             background-color: #2b2b2b;
+        #             color: #ffffff;
+        #         }
+        #         QMessageBox QLabel {
+        #             color: #ffffff;
+        #         }
+        #         QMessageBox QPushButton {
+        #             background-color: #3c3c3c;
+        #             color: #ffffff;
+        #             border: 1px solid #555;
+        #         }
+        #         QMessageBox QPushButton:hover {
+        #             background-color: #555;
+        #         }
+        #     """)
+
+        # else:
+        #     palette = app.style().standardPalette()
+        #     self.subject_input.setStyleSheet("")
+        #     self.email_input.setStyleSheet("")
+        #     self.dropdown_type.setStyleSheet('')
+        #     self.dropdown_classification.setStyleSheet('')
+        #     self.priority_dropdown.setStyleSheet("")
+        #     self.status_dropdown.setStyleSheet("")
+        #     self.attachment_button.setStyleSheet("")
+        #     self.submit_button.setStyleSheet("")
+        #     self.clear_button.setStyleSheet("")
+
+        #     # Light mode for QMessageBox
+        #     app.setStyleSheet("""
+        #         QMessageBox {
+        #             background-color: #ffffff;
+        #             color: #000000;
+        #         }
+        #         QMessageBox QLabel {
+        #             color: #000000;
+        #         }
+        #         QMessageBox QPushButton {
+        #             background-color: #f0f0f0;
+        #             color: #000000;
+        #             border: 1px solid #ccc;
+        #         }
+        #         QMessageBox QPushButton:hover {
+        #             background-color: #e0e0e0;
+        #         }
+        #     """)
+
+        # app.setPalette(palette)
 
         # Wait for the editor page to load before applying dark mode
         def set_editor_mode():
@@ -296,9 +322,11 @@ class TicketCreator(QMainWindow):
 
         self.editor.page().loadFinished.connect(set_editor_mode)
 
+
     def tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
             self.show()
+
 
     def handle_dropdown_type_change(self, value):
         if value == 'Sage':
@@ -308,6 +336,7 @@ class TicketCreator(QMainWindow):
         else:
             self.classification_label.hide()
             self.dropdown_classification.hide()
+
 
     def closeEvent(self, event):
         event.ignore()
@@ -319,6 +348,7 @@ class TicketCreator(QMainWindow):
             3000
         )
 
+
     def exit_application(self):
         """Exit the application cleanly."""
         try:
@@ -329,6 +359,7 @@ class TicketCreator(QMainWindow):
         
         QApplication.quit()
 
+
     def create_ticket(self):
 
         def validate_field(field_label, field_input, value, error_msg):
@@ -336,18 +367,29 @@ class TicketCreator(QMainWindow):
                 field_label.setStyleSheet('color: red;')
                 field_input.setStyleSheet('border: 2px solid red;')
                 return error_msg
-            field_label.setStyleSheet('')
-            field_input.setStyleSheet('')
-            return None
+            else:
+                field_label.setStyleSheet('')
+                field_input.setStyleSheet('')
+                return None
         
         missing_fields = []
-        missing_fields.append(validate_field(self.subject_label, self.subject_input, self.subject_input.text(), 'Subject'))
-        missing_fields.append(validate_field(self.email_label, self.email_input, self.email_input.text(), 'Email'))
-        missing_fields.append(validate_field(self.dropdown_type_label, self.dropdown_type, self.dropdown_type.currentText(), 'Type'))
+
+        # Append if there is a missing value
+        subject_error = validate_field(self.subject_label, self.subject_input, self.subject_input.text(), 'Subject')
+        if subject_error:
+            missing_fields.append(subject_error)
+        email_error = validate_field(self.email_label, self.email_input, self.email_input.text(), 'Email')
+        if email_error:
+            missing_fields.append(email_error)
+        type_error = validate_field(self.dropdown_type_label, self.dropdown_type, self.dropdown_type.currentText(), 'Type')
+        if type_error:
+            missing_fields.append(type_error)
+
 
         # Validate the Description field asynchronously
         def validate_description(content):
-            if not content.strip():
+            description = content.strip() if content.strip() else None
+            if not description:
                 self.description_label.setStyleSheet('color: red;')
                 self.editor.page().runJavaScript("document.getElementById('editor').classList.add('invalid')")
                 missing_fields.append('Description')
@@ -359,17 +401,13 @@ class TicketCreator(QMainWindow):
             if missing_fields:
                 QMessageBox.critical(self, 'Error', f'The following fields are required: \n{', '.join(filter(None, missing_fields))}')
             else:
-                self.send_ticket()
+                self.send_ticket(description)
 
         self.editor.page().runJavaScript("document.getElementById('editor').innerText", validate_description)
-        # subject = self.subject_input.text().strip()
-        # email = self.email_input.text().strip()
-        # if not subject or not email:
-        #     QMessageBox.critical(self, "Error", "Subject and Email are required!")
-        #     return
-        # self.editor.page().runJavaScript("getContent()", self.handle_description_content)
+
 
     def clear_fields(self):
+
         """Clear all input fields and reset the form."""
         self.subject_input.clear()
         self.email_input.clear()
@@ -396,6 +434,7 @@ class TicketCreator(QMainWindow):
         self.description_label.setStyleSheet("")
         self.editor.page().runJavaScript("document.getElementById('editor').classList.remove('invalid')")
 
+
     def handle_description_content(self, description):
         self.description = description
         self.embedded_images = self.extract_embedded_images(description)
@@ -418,15 +457,14 @@ class TicketCreator(QMainWindow):
             embedded_images.append(file_path)
         return embedded_images
 
-    def send_ticket(self):
+    def send_ticket(self, description):
         """Send the ticket data to the Freshdesk API with or without attachments."""
         try:
             # Prepare ticket details
             subject = self.subject_input.text().strip()
             email = self.email_input.text().strip()
-            description = self.description or "No description provided"
-            type = self.dropdown_type
-            classification = self.dropdown_classification
+            type_field = self.dropdown_type.currentText()
+            classification = self.dropdown_classification.currentText()
             priority = self.priority_dropdown.currentIndex() + 1
             status = self.status_dropdown.currentIndex() + 2
 
@@ -441,9 +479,9 @@ class TicketCreator(QMainWindow):
                 "description"  : description,
                 "priority"     : priority,     # Keep as integer
                 "status"       : status,       # Keep as integer
-                "type"         : self.dropdown_type.currentText(),
+                "type"         : type_field,
                 "custom_fields": {
-                    "cf_classification": self.dropdown_classification.currentText()
+                    "cf_classification": classification
                 }
             }
 
