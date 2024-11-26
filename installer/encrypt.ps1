@@ -1,6 +1,7 @@
 param (
     [string]$FreshdeskURL,
-    [string]$FreshdeskApiKey
+    [string]$FreshdeskApiKey,
+    [switch]$EnableLogging
 )
 
 # Ensure the required .NET assembly is loaded
@@ -17,9 +18,19 @@ if (!(Test-Path $EncryptedDataFolder)) {
     New-Item -ItemType Directory -Path $EncryptedDataFolder -Force | Out-Null
 }
 
-# Log inputs for debugging
-Add-Content -Path $LogFile -Value "$(Get-Date) - Received FreshdeskURL: $FreshdeskURL"
-Add-Content -Path $LogFile -Value "$(Get-Date) - Received FreshdeskApiKey: $FreshdeskApiKey"
+# Function to log messages if logging is enabled
+function Write-Log {
+    param (
+        [string]$Message
+    )
+    if ($EnableLogging) {
+        Add-Content -Path $LogFile -Value "$(Get-Date) - $Message"
+    }
+}
+
+# Log inputs (only if logging is enabled)
+Write-Log "Received FreshdeskURL: $FreshdeskURL"
+Write-Log "Received FreshdeskApiKey: $FreshdeskApiKey"
 
 # Encrypt and save
 try {
@@ -31,8 +42,8 @@ try {
         [System.Text.Encoding]::UTF8.GetBytes($FreshdeskApiKey), $null, [System.Security.Cryptography.DataProtectionScope]::LocalMachine))
     Set-Content -Path $EncryptedApiKeyFile -Value $EncryptedApiKey
 
-    Add-Content -Path $LogFile -Value "$(Get-Date) - Successfully encrypted and saved credentials."
+    Write-Log "Successfully encrypted and saved credentials."
 } catch {
-    Add-Content -Path $LogFile -Value "$(Get-Date) - ERROR: $($_.Exception.Message)"
+    Write-Log "ERROR: $($_.Exception.Message)"
     Exit 1
 }
