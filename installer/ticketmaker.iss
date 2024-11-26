@@ -1,7 +1,7 @@
 [Setup]
 AppName=TicketMaker
 AppVersion=0.3.5
-AppPublisher=S.C. Swiderski IT Department
+AppPublisher=S.C. Swiderski, LLC
 AppPublisherURL=https://github.com/SC-Swiderski-LLC/TicketMaker
 AppSupportURL=https://github.com/SC-Swiderski-LLC/TicketMaker/issues
 AppUpdatesURL=https://github.com/SC-Swiderski-LLC/TicketMaker/releases
@@ -31,6 +31,9 @@ Type: filesandordirs; Name: "{commonappdata}\TicketMaker"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{commonappdata}\TicketMaker"
+
+[Run]
+Filename: "{app}\TicketMaker.exe"; Description: "Launch TicketMaker"; Flags: nowait postinstall skipifsilent
 
 [Icons]
 Name: "{group}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
