@@ -138,11 +138,14 @@ class TicketCreator(QMainWindow):
         self.init_ui()
         self.apply_theme()
 
+        # Start minimized to system tray
+        self.hide()
+
     def init_ui(self):
         """Set up the UI."""
         self.setWindowTitle("TicketMaker")
         self.setGeometry(100, 100, 800, 850)
-        
+
         # Set window icon
         icon_path = resource_path("assets/icon.ico")
         self.setWindowIcon(QIcon(icon_path))
@@ -155,7 +158,7 @@ class TicketCreator(QMainWindow):
         # Tray Menu
         tray_menu = QMenu()
         open_action = tray_menu.addAction("Open TicketMaker")
-        open_action.triggered.connect(self.show)
+        open_action.triggered.connect(self.show_normal)  # Adjusted to reuse show_normal()
         exit_action = tray_menu.addAction("Exit")
         exit_action.triggered.connect(self.exit_application)
         self.tray_icon.setContextMenu(tray_menu)
@@ -165,6 +168,9 @@ class TicketCreator(QMainWindow):
 
         central_widget = QWidget()
         layout = QVBoxLayout()
+        # Add additional UI initialization here
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
 
         # Subject Field
         layout.addWidget(QLabel("Subject:"))
@@ -300,10 +306,17 @@ class TicketCreator(QMainWindow):
         self.editor.page().loadFinished.connect(set_editor_mode)
 
     def tray_icon_activated(self, reason):
+        """Handle tray icon activation."""
         if reason == QSystemTrayIcon.DoubleClick:
-            self.show()
+            self.show_normal()
+
+    def show_normal(self):
+        """Restore and bring the window to the front."""
+        self.show()
+        self.activateWindow()
 
     def closeEvent(self, event):
+        """Override close event to minimize to tray instead of exiting."""
         event.ignore()
         self.hide()
         self.tray_icon.showMessage(
@@ -518,8 +531,7 @@ if __name__ == "__main__":
             QMessageBox.critical(None, "Critical Error", f"An error occurred while initializing the application:\n\n{error_details}")
             sys.exit(1)
 
-        splash.finish(window)
-        window.show()
+        splash.finish(window)  # Finish the splash, but do not call window.show()
 
     except Exception as e:
         # Log and display any unexpected errors

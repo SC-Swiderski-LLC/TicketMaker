@@ -1,6 +1,10 @@
 [Setup]
 AppName=TicketMaker
 AppVersion=0.3.5
+AppPublisher=S.C. Swiderski IT Department
+AppPublisherURL=https://github.com/SC-Swiderski-LLC/TicketMaker
+AppSupportURL=https://github.com/SC-Swiderski-LLC/TicketMaker/issues
+AppUpdatesURL=https://github.com/SC-Swiderski-LLC/TicketMaker/releases
 DefaultDirName={pf64}\TicketMaker
 DefaultGroupName=TicketMaker
 OutputBaseFilename=TicketMaker_Installer
@@ -10,11 +14,23 @@ SolidCompression=yes
 WizardImageFile=TicketMakerLogo.bmp
 WizardSmallImageFile=TicketMakerLogoSmall.bmp
 UninstallDisplayName=TicketMaker
-UninstallDisplayIcon=icon.ico
+UninstallDisplayIcon={app}\icon.ico
 
 [Files]
 Source: "TicketMaker.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "encrypt.ps1"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+
+[Registry]
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; \
+ValueName: "TicketMaker"; ValueType: string; ValueData: """{app}\TicketMaker.exe"""; Flags: uninsdeletevalue
+
+[InstallDelete]
+Type: filesandordirs; Name: "{app}"
+Type: filesandordirs; Name: "{commonappdata}\TicketMaker"
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{commonappdata}\TicketMaker"
 
 [Icons]
 Name: "{group}\TicketMaker"; Filename: "{app}\TicketMaker.exe"
