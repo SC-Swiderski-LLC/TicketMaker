@@ -1,89 +1,65 @@
+# Welcome to TicketMaker!
 
-# TicketMaker - Freshdesk Ticket Creator
+TicketMaker is your go-to solution for seamlessly creating support tickets in a Freshdesk system. This repository serves as a complete guide to help you deploy, configure, and get the most out of TicketMaker in your environment.
 
 ![Application Screenshot](images/screenshotmain.png)
 
-## Overview
+---
 
-**TicketMaker** is a standalone Windows application designed to simplify creating support tickets in a Freshdesk system. This repository contains the full version of the application.
+## 📖 Table of Contents
 
-### Features
+- **[Getting Started](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Getting-Started)**  
+  A step-by-step guide to cloning and working with TicketMaker source code.
 
-- **Rich Text Editor**: Supports formatted text and embedded images in the ticket description.
-- **Embedded Image Handling**: Automatically extracts embedded images and sends them as attachments.
-- **File Attachments**: Users can upload additional files to include with their tickets.
-- **User-Friendly GUI**: Intuitive fields for entering ticket details.
-- **Dropdown Options**: Predefined dropdowns for Priority and Status fields.
-- **Validation**: Ensures all required fields are filled before submission.
-- **Secure API Integration**: Communicates with the Freshdesk API for ticket creation.
-- **Standalone Portable Application**: Runs as a single `.exe` file with no installation required.
+- **[Features](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Features)**  
+  Explore all the key features, including the rich text editor, secure credential storage, and auto dark mode.
+
+- **[Self-Packing TicketMaker](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Self%E2%80%90Packing-TicketMaker)**  
+  Instructions on how to clone the repository and use PyInstaller to create a custom `.exe`.
+
+- **[Installer](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Installer)**  
+  Information for administrators on working with the installer.
+
+- **[Intune Deployment](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Intune-Deployment)**  
+  Detailed instructions for deploying TicketMaker in managed environments using Microsoft Intune.
+
+- **[Troubleshooting](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Troubleshooting)**  
+  Find solutions to common issues and errors.
+
+- **[Roadmap](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Roadmap)**  
+  Planned future development and upcoming features.
+
+- **[Contributing](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Contributing)**  
+  Learn how you can contribute to the development of TicketMaker.
+
+- **[Code of Conduct](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Code-of-Conduct)**  
+  Read our Code of Conduct if you plan to participate in the project.
+
+- **[Credits and Attribution](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Credits-and-Attribution)**  
+  Creators and contributors of these resources.
 
 ---
 
-## How It Works
+## ✨ Why TicketMaker?
 
-1. **First Launch**:
-   - Upon the first launch, the app prompts for your Freshdesk API URL and API key.
-   - These details are stored temporarily in a `config.json` file until the app is exited.
+TicketMaker is designed for IT admins and organizations looking for a lightweight yet powerful tool to streamline ticket creation in Freshdesk. Key highlights include:
 
-2. **Fill in Required Fields**:
-   - **Subject**: Short description of the issue.
-   - **Description**: Rich text description with support for images.
-   - **Email**: Contact email of the requester.
-   - **Priority**: Dropdown to select ticket priority (Low, Medium, High, Urgent).
-   - **Status**: Dropdown to select ticket status (Open, Pending, Resolved, Closed).
-   - **Attachments**: Add files to include with the ticket.
-
-3. **Submit Ticket**:
-   - The app validates the inputs and extracts embedded images.
-   - Submits the ticket details and attachments to the Freshdesk API.
-   - Displays a success or error message based on the API response.
-
-4. **Config Cleanup**:
-   - On exit, the `config.json` file is cleared to avoid storing sensitive data.
+- **Secure by Design**: Credentials are stored in Windows Credential Manager for maximum security.
+- **Easy to Deploy**: Supports standalone use or Intune-managed environments.
+- **Highly Customizable**: Open-source and easy to adapt to your needs.
 
 ---
 
-## Packaging the Application
+## 🔗 Quick Links
 
-Use the following PyInstaller command to create the standalone executable for `ticketmaker.py`:
-
-```bash
-pyinstaller --clean --onefile --noconsole --icon="assets/icon.ico" --add-data "assets;assets" --add-data "editor.html;." --hidden-import "PyQt5.QtWidgets" --hidden-import "PyQt5.QtWebEngineWidgets" --hidden-import "PyQt5.QtCore" --hidden-import "PyQt5.QtGui" --hidden-import "PyQt5.QtWebEngine" --hidden-import "PyQt5.QtWebEngineCore" --hidden-import "PyQt5.QtWebEngineQuick" --hidden-import "freshdesk.api" ticketmaker.py
-```
+- [TicketMaker GitHub Repository](https://github.com/SC-Swiderski-LLC/TicketMaker)
+- [Freshdesk API Documentation](https://developer.freshdesk.com/api/)
+- [Submit an Issue](https://github.com/SC-Swiderski-LLC/TicketMaker/issues) (for bugs or feature requests)
 
 ---
 
-## Future Developments
+## 🛠 Need Help?
 
-The following features are planned for future versions:
-- **Deployable for Managed Intune Environments**: Ability to easily distribute via Microsoft Intune.
-- **Installer Option**: MSI installer tailored for managed environments.
-- **Menu Items**: Enhanced menu options for additional functionality.
-- **Dark Mode Support**: A dark mode option for better user experience.
-- **Custom Branding**: Ability to apply custom branding to the app.
+If you encounter any issues or have questions, feel free to explore the **[Troubleshooting](https://github.com/SC-Swiderski-LLC/TicketMaker/wiki/Troubleshooting)** section or [open an issue on GitHub](https://github.com/SC-Swiderski-LLC/TicketMaker/issues).
 
----
-
-## Credits
-
-- **Python-Freshdesk Library Wrapper**: [Freshdesk API Python Wrapper](https://github.com/rschulz600/freshdesk-api-wrapper).
-- **Support Ticket Icon**: <a href="https://www.flaticon.com/free-icons/support-ticket" title="support ticket icons">Support ticket icons created by syafii5758 - Flaticon</a>.
-- **Advanced Installer**: <a href="https://www.advancedinstaller.com/" title="advanced installer homepage">Windows Installer Packaging Tool for Developers, ISVs & Enterprises</a>.
-
----
-
-## Contributing
-
-If you want to contribute to this project, feel free to fork the repository, make changes, and submit a pull request.
-
----
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
----
-
-Thank you for using TicketMaker! Let us know if you have any questions or suggestions.
-
+Thank you for using TicketMaker! 🚀
