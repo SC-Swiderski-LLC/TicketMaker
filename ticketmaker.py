@@ -1,6 +1,5 @@
 import sys
 import os
-import json
 import re
 import base64
 import winreg
@@ -24,9 +23,8 @@ LOG_FILE = os.path.join(STORAGE_PATH, "ticketmaker.log")
 URL_FILE = os.path.join(STORAGE_PATH, "FreshdeskURL.dat")
 APIKEY_FILE = os.path.join(STORAGE_PATH, "FreshdeskAPIKey.dat")
 
-# Set up logging to write to both a file and the console
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    level=logging.CRITICAL,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler(LOG_FILE),
@@ -34,6 +32,15 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# Function to enable logging for troubleshooting
+def enable_logging():
+    logger.setLevel(logging.DEBUG)
+    logger.info("Verbose logging enabled.")
+
+# Check for environment variable or argument to enable logging
+if os.getenv("ENABLE_LOGGING") == "true" or "--enable-logging" in sys.argv:
+    enable_logging()
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and PyInstaller."""
@@ -185,7 +192,7 @@ class TicketCreator(QMainWindow):
         # Rich Text Editor
         layout.addWidget(QLabel("Description:"))
         self.editor = QWebEngineView()
-        editor_path = resource_path("src/editor.html")
+        editor_path = resource_path("editor.html")
         if os.path.exists(editor_path):
             self.editor.setUrl(QUrl.fromLocalFile(editor_path))
         else:
@@ -350,8 +357,8 @@ class TicketCreator(QMainWindow):
         self.email_input.clear()
 
         # Reset the editor's content without affecting its visibility
-        if os.path.exists(resource_path("src/editor.html")):
-            self.editor.setUrl(QUrl.fromLocalFile(resource_path("src/editor.html")))
+        if os.path.exists(resource_path("editor.html")):
+            self.editor.setUrl(QUrl.fromLocalFile(resource_path("editor.html")))
         else:
             self.editor.setHtml("<h3>Editor file not found</h3>")
 
